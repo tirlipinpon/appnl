@@ -32,16 +32,24 @@ npm install
    - Copier l'URL du projet et la clé anonyme
 
 3. Configurer l'environnement :
+   - **Récupérer votre clé API Supabase** :
+     - Allez sur https://supabase.com/dashboard
+     - Sélectionnez votre projet
+     - Allez dans **Settings → API**
+     - Copiez la clé **"anon public"** (elle commence par `eyJ...` - c'est un JWT)
+   
    - Modifier `src/environments/environment.ts` avec vos credentials Supabase :
    ```typescript
    export const environment = {
      production: false,
      supabase: {
-       url: 'VOTRE_URL_SUPABASE',
-       anonKey: 'VOTRE_CLE_ANONYME'
+       url: 'https://zmgfaiprgbawcernymqa.supabase.co',
+       anonKey: 'VOTRE_CLE_ANON_KEY_ICI' // ⚠️ Doit commencer par eyJ...
      }
    };
    ```
+   
+   ⚠️ **Important** : La clé anon_key doit être un JWT qui commence par `eyJ...`. Si votre clé ne commence pas par `eyJ`, ce n'est pas la bonne clé.
 
 ## Démarrage
 
