@@ -145,18 +145,27 @@ export class ProgressService {
 
   async getWordsToReview(userId: string): Promise<Word[]> {
     const now = new Date().toISOString();
-    const { data, error } = await this.supabaseService.client
+    const { data: progressData, error: progressError } = await this.supabaseService.client
       .from('nlapp_user_progress')
-      .select(`
-        word_id,
-        nlapp_words (*)
-      `)
+      .select('word_id')
       .eq('user_id', userId)
       .lte('next_review_date', now)
       .order('next_review_date', { ascending: true });
 
-    if (error) throw error;
-    return (data || []).map((item: any) => item.nlapp_words).filter(Boolean);
+    if (progressError) throw progressError;
+    
+    if (!progressData || progressData.length === 0) {
+      return [];
+    }
+
+    const wordIds = progressData.map((p: any) => p.word_id);
+    const { data: wordsData, error: wordsError } = await this.supabaseService.client
+      .from('nlapp_words')
+      .select('*')
+      .in('id', wordIds);
+
+    if (wordsError) throw wordsError;
+    return wordsData || [];
   }
 
   async getUserLessons(userId: string): Promise<UserLesson[]> {
