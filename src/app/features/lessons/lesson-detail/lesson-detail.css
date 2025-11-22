@@ -1,0 +1,142 @@
+.lesson-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.btn-back {
+  padding: 10px 20px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-back:hover {
+  background: #5a6268;
+}
+
+h1 {
+  margin: 0;
+  color: #333;
+  font-size: 32px;
+}
+
+h2 {
+  color: #333;
+  font-size: 24px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.completion-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.completion-content {
+  text-align: center;
+  background: white;
+  border-radius: 16px;
+  padding: 48px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+}
+
+.completion-content h2 {
+  font-size: 36px;
+  margin-bottom: 16px;
+  color: #667eea;
+}
+
+.completion-content p {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 32px;
+}
+
+.scores {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.score-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 150px;
+}
+
+.score-card h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #666;
+  font-weight: 500;
+}
+
+.score-value {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-primary {
+  padding: 12px 24px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: #5568d3;
+}
+
+.btn-secondary {
+  padding: 12px 24px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+

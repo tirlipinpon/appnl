@@ -1,0 +1,64 @@
+<div class="typing-practice-container">
+  <div class="progress-bar">
+    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
+    <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
+  </div>
+
+  <div *ngIf="currentWord" class="typing-content">
+    <div class="question-section">
+      <h3 class="question-label">{{ getQuestionLabel() }}</h3>
+      <div class="question-text">{{ getQuestionText() }}</div>
+    </div>
+
+    <div class="input-section">
+      <div class="letter-counter">
+        Lettres : {{ letterCount }} / {{ expectedLength }}
+      </div>
+      <input
+        type="text"
+        class="typing-input"
+        [class]="getInputClass()"
+        [value]="userInput"
+        (input)="onInputChange($event)"
+        (keyup.enter)="validateAnswer()"
+        [disabled]="showResult"
+        placeholder="Tapez votre réponse..."
+        autofocus
+      />
+    </div>
+
+    <div *ngIf="showResult" class="result-section">
+      <div class="result-message" [class.correct]="isCorrect" [class.incorrect]="!isCorrect">
+        <span *ngIf="isCorrect">✓ Correct !</span>
+        <span *ngIf="!isCorrect">
+          ✗ Incorrect. La bonne réponse est : <strong>{{ correctAnswer }}</strong>
+        </span>
+      </div>
+      
+      <div class="score">
+        Score : {{ score.correct }} / {{ score.total }}
+      </div>
+
+      <button 
+        class="btn-primary" 
+        (click)="nextQuestion()"
+        *ngIf="currentIndex < words.length - 1"
+      >
+        Question suivante →
+      </button>
+      <button 
+        class="btn-primary" 
+        (click)="completed.emit(score)"
+        *ngIf="currentIndex === words.length - 1"
+      >
+        Terminer l'exercice
+      </button>
+    </div>
+
+    <div *ngIf="!showResult" class="action-section">
+      <button class="btn-primary" (click)="validateAnswer()" [disabled]="!userInput.trim()">
+        Valider
+      </button>
+    </div>
+  </div>
+</div>

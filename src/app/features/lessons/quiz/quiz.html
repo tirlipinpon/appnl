@@ -1,0 +1,53 @@
+<div class="quiz-container">
+  <div class="progress-bar">
+    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
+    <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
+  </div>
+
+  <div *ngIf="currentWord" class="quiz-content">
+    <div class="question-section">
+      <h3 class="question-label">{{ getQuestionLabel() }}</h3>
+      <div class="question-text">{{ getQuestionText() }}</div>
+    </div>
+
+    <div class="choices-section">
+      <button
+        *ngFor="let choice of choices"
+        class="choice-btn"
+        [class.selected]="selectedAnswer === choice"
+        [class.correct]="showResult && choice === correctAnswer"
+        [class.incorrect]="showResult && selectedAnswer === choice && !isCorrect"
+        [disabled]="showResult"
+        (click)="selectAnswer(choice)"
+      >
+        {{ choice }}
+      </button>
+    </div>
+
+    <div *ngIf="showResult" class="result-section">
+      <div class="result-message" [class.correct]="isCorrect" [class.incorrect]="!isCorrect">
+        <span *ngIf="isCorrect">✓ Correct !</span>
+        <span *ngIf="!isCorrect">✗ Incorrect. La bonne réponse est : {{ correctAnswer }}</span>
+      </div>
+      
+      <div class="score">
+        Score : {{ score.correct }} / {{ score.total }}
+      </div>
+
+      <button 
+        class="btn-primary" 
+        (click)="nextQuestion()"
+        *ngIf="currentIndex < words.length - 1"
+      >
+        Question suivante →
+      </button>
+      <button 
+        class="btn-primary" 
+        (click)="completed.emit(score)"
+        *ngIf="currentIndex === words.length - 1"
+      >
+        Terminer le quiz
+      </button>
+    </div>
+  </div>
+</div>

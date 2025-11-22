@@ -1,0 +1,66 @@
+<div class="lesson-detail-container">
+  <div class="header">
+    <button class="btn-back" routerLink="/lessons">← Retour aux leçons</button>
+    <h1 *ngIf="lesson">{{ lesson.title }}</h1>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">Chargement de la leçon...</div>
+
+  <div *ngIf="!isLoading && lesson">
+    <!-- Étape 1: Flashcards -->
+    <div *ngIf="currentStep === 'flashcards' && words.length > 0">
+      <app-flashcard-view
+        [word]="words[currentFlashcardIndex]"
+        [currentIndex]="currentFlashcardIndex"
+        [totalWords]="words.length"
+        (next)="onFlashcardNext()"
+        (previous)="onFlashcardPrevious()"
+        (finish)="onFlashcardsFinish()"
+      ></app-flashcard-view>
+    </div>
+
+    <!-- Étape 2: Quiz à choix multiples -->
+    <div *ngIf="currentStep === 'quiz'">
+      <h2>Quiz à choix multiples</h2>
+      <app-quiz
+        [words]="words"
+        [direction]="'french_to_dutch'"
+        (completed)="onQuizCompleted($event)"
+      ></app-quiz>
+    </div>
+
+    <!-- Étape 3: Pratique d'écriture -->
+    <div *ngIf="currentStep === 'typing'">
+      <h2>Pratique d'écriture</h2>
+      <app-typing-practice
+        [words]="words"
+        [direction]="'dutch_to_french'"
+        (completed)="onTypingCompleted($event)"
+      ></app-typing-practice>
+    </div>
+
+    <!-- Étape 4: Leçon complétée -->
+    <div *ngIf="currentStep === 'completed'" class="completion-screen">
+      <div class="completion-content">
+        <h2>🎉 Félicitations !</h2>
+        <p>Vous avez complété la leçon "{{ lesson.title }}"</p>
+        
+        <div class="scores">
+          <div class="score-card">
+            <h3>Quiz</h3>
+            <p class="score-value">{{ quizScore?.correct }} / {{ quizScore?.total }}</p>
+          </div>
+          <div class="score-card">
+            <h3>Écriture</h3>
+            <p class="score-value">{{ typingScore?.correct }} / {{ typingScore?.total }}</p>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn-primary" routerLink="/lessons">Voir toutes les leçons</button>
+          <button class="btn-secondary" (click)="restartLesson()">Recommencer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

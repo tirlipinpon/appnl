@@ -1,0 +1,23 @@
+<div class="lesson-list-container">
+  <div class="header">
+    <h1>Mes leçons</h1>
+    <button class="btn-secondary" routerLink="/dashboard">Retour au tableau de bord</button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">Chargement des leçons...</div>
+
+  <div *ngIf="!isLoading" class="lessons-grid">
+    <div *ngFor="let lesson of lessons" class="lesson-card" [routerLink]="['/lessons', lesson.id]">
+      <div class="lesson-header">
+        <h2>{{ lesson.title }}</h2>
+        <span *ngIf="isLessonCompleted(lesson.id)" class="badge completed">✓ Complétée</span>
+        <span *ngIf="!isLessonCompleted(lesson.id)" class="badge pending">En cours</span>
+      </div>
+      <p *ngIf="lesson.description" class="lesson-description">{{ lesson.description }}</p>
+      <div class="lesson-footer">
+        <span class="lesson-order">Leçon {{ lesson.order_index }}</span>
+        <button class="btn-primary-small">Commencer</button>
+      </div>
+    </div>
+  </div>
+</div>

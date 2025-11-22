@@ -1,0 +1,35 @@
+<div class="flashcard-container">
+  <div class="progress-bar">
+    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / totalWords) * 100"></div>
+    <span class="progress-text">{{ currentIndex + 1 }} / {{ totalWords }}</span>
+  </div>
+
+  <div class="flashcard" (click)="flipCard()">
+    <div class="flashcard-inner" [class.flipped]="showDutch">
+      <div class="flashcard-front">
+        <div class="language-label">Français</div>
+        <div class="word-text">{{ word.french_text }}</div>
+        <div class="hint">Cliquez pour voir la traduction</div>
+      </div>
+      <div class="flashcard-back">
+        <div class="language-label">Néerlandais</div>
+        <div class="word-text">{{ word.dutch_text }}</div>
+        <button class="audio-btn" (click)="playAudio(); $event.stopPropagation()" *ngIf="audioService.isSupported()">
+          🔊 Prononcer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="navigation-buttons">
+    <button class="btn-nav" (click)="onPrevious()" [disabled]="currentIndex === 0">
+      ← Précédent
+    </button>
+    <button class="btn-primary" (click)="onNext()" *ngIf="currentIndex < totalWords - 1">
+      Suivant →
+    </button>
+    <button class="btn-primary" (click)="onFinish()" *ngIf="currentIndex === totalWords - 1">
+      Terminer et passer au quiz
+    </button>
+  </div>
+</div>

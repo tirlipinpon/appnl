@@ -1,0 +1,98 @@
+<div class="word-management-container">
+  <div class="header">
+    <h1>Gestion des mots</h1>
+    <button class="btn-secondary" routerLink="/dashboard">Retour au tableau de bord</button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">Chargement...</div>
+
+  <div *ngIf="!isLoading">
+    <!-- Formulaire d'ajout/édition -->
+    <div class="form-section">
+      <h2>{{ editingWord ? 'Modifier le mot' : 'Ajouter un nouveau mot' }}</h2>
+      
+      <form [formGroup]="wordForm" (ngSubmit)="onSubmit()" class="word-form">
+        <div class="form-group">
+          <label for="french_text">Français</label>
+          <input
+            id="french_text"
+            type="text"
+            formControlName="french_text"
+            placeholder="Bonjour"
+            [class.error]="wordForm.get('french_text')?.invalid && wordForm.get('french_text')?.touched"
+          />
+          <span class="error-message" *ngIf="wordForm.get('french_text')?.hasError('required') && wordForm.get('french_text')?.touched">
+            Le texte français est requis
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="dutch_text">Néerlandais</label>
+          <input
+            id="dutch_text"
+            type="text"
+            formControlName="dutch_text"
+            placeholder="Hallo"
+            [class.error]="wordForm.get('dutch_text')?.invalid && wordForm.get('dutch_text')?.touched"
+          />
+          <span class="error-message" *ngIf="wordForm.get('dutch_text')?.hasError('required') && wordForm.get('dutch_text')?.touched">
+            Le texte néerlandais est requis
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="lesson_id">Leçon</label>
+          <select
+            id="lesson_id"
+            formControlName="lesson_id"
+            [class.error]="wordForm.get('lesson_id')?.invalid && wordForm.get('lesson_id')?.touched"
+          >
+            <option value="">Sélectionner une leçon</option>
+            <option *ngFor="let lesson of lessons" [value]="lesson.id">
+              {{ lesson.title }}
+            </option>
+          </select>
+          <span class="error-message" *ngIf="wordForm.get('lesson_id')?.hasError('required') && wordForm.get('lesson_id')?.touched">
+            La leçon est requise
+          </span>
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+        <div class="success-message" *ngIf="successMessage">{{ successMessage }}</div>
+
+        <div class="form-actions">
+          <button type="submit" [disabled]="wordForm.invalid" class="btn-primary">
+            {{ editingWord ? 'Mettre à jour' : 'Ajouter' }}
+          </button>
+          <button type="button" class="btn-secondary" (click)="cancelEdit()" *ngIf="editingWord">
+            Annuler
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Liste des mots -->
+    <div class="words-section">
+      <h2>Liste des mots ({{ words.length }})</h2>
+      
+      <div class="words-table">
+        <div class="table-header">
+          <div class="col-french">Français</div>
+          <div class="col-dutch">Néerlandais</div>
+          <div class="col-lesson">Leçon</div>
+          <div class="col-actions">Actions</div>
+        </div>
+        
+        <div *ngFor="let word of words" class="table-row">
+          <div class="col-french">{{ word.french_text }}</div>
+          <div class="col-dutch">{{ word.dutch_text }}</div>
+          <div class="col-lesson">{{ getLessonTitle(word.lesson_id) }}</div>
+          <div class="col-actions">
+            <button class="btn-edit" (click)="editWord(word)">Modifier</button>
+            <button class="btn-delete" (click)="deleteWord(word)">Supprimer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
