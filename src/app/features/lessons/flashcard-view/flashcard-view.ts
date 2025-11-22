@@ -10,7 +10,7 @@ import { AudioService } from '../../../core/services/audio.service';
   styleUrl: './flashcard-view.css',
 })
 export class FlashcardView {
-  private audioService = inject(AudioService);
+  audioService = inject(AudioService);
 
   @Input() word!: Word;
   @Input() currentIndex: number = 0;

@@ -63,7 +63,7 @@ export class Register {
   }
 
   get passwordMismatch(): boolean {
-    return this.registerForm.hasError('passwordMismatch') && 
-           this.registerForm.get('confirmPassword')?.touched;
+    return !!(this.registerForm.hasError('passwordMismatch') && 
+           this.registerForm.get('confirmPassword')?.touched);
   }
 }
