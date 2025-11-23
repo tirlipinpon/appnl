@@ -26,16 +26,18 @@
           class="letter-wrapper"
         >
           <input
+            #letterInput
             type="text"
             class="letter-input"
             [class.correct]="getLetterStatus(i) === 'correct'"
             [class.incorrect]="getLetterStatus(i) === 'incorrect'"
-            [data-letter-index]="i"
+            [attr.data-letter-index]="i"
             [value]="letterInputs[i]"
-            [disabled]="showResult"
+            [disabled]="showResult || !canEditInput(i)"
             maxlength="1"
             (input)="onLetterInput(i, $event)"
             (keydown)="onKeyDown(i, $event)"
+            (focus)="onInputFocus(i, $event)"
             [autofocus]="i === 0"
           />
           <div 
@@ -45,21 +47,27 @@
           ></div>
         </div>
       </div>
-      <button 
-        class="btn-check" 
-        (click)="checkAnswer()"
-        [disabled]="showResult || letterInputs.length === 0 || letterInputs.join('').trim().length === 0"
-      >
-        Vérifier
-      </button>
+      <div class="action-buttons">
+        <button 
+          class="btn-check" 
+          (click)="checkAnswer()"
+          [disabled]="showResult || letterInputs.length === 0 || letterInputs.join('').trim().length === 0 || isWordCompleteAndCorrect()"
+          *ngIf="!isWordCompleteAndCorrect()"
+        >
+          Vérifier
+        </button>
+        <button 
+          class="btn-skip" 
+          (click)="skipQuestion()"
+          [disabled]="showResult"
+          *ngIf="!showResult"
+        >
+          Passer
+        </button>
+      </div>
     </div>
 
     <div *ngIf="showResult" class="result-section">
-      <div class="result-message" [class.correct]="isCorrect" [class.incorrect]="!isCorrect">
-        <span *ngIf="isCorrect">✓ Correct !</span>
-        <span *ngIf="!isCorrect">✗ Incorrect. La bonne réponse est : {{ direction === 'dutch_to_french' ? getCurrentWord()?.dutch_text : getCurrentWord()?.french_text }}</span>
-      </div>
-      
       <div class="score">
         Score : {{ score.correct }} / {{ score.total }}
       </div>

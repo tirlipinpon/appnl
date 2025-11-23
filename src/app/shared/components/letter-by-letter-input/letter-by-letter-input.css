@@ -1,0 +1,95 @@
+.letter-input-wrapper {
+  width: 100%;
+}
+
+.letter-counter {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.letter-input-container {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+}
+
+.letter-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.letter-input {
+  width: 48px;
+  height: 48px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.letter-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.letter-input:disabled {
+  background: #f8f9fa;
+  cursor: not-allowed;
+}
+
+.letter-input.correct {
+  border-color: #28a745;
+  background: #d4edda;
+  color: #155724;
+}
+
+.letter-input.incorrect {
+  border-color: #dc3545;
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.letter-bar {
+  width: 48px;
+  height: 4px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.letter-bar.correct {
+  background: #28a745;
+}
+
+.letter-bar.incorrect {
+  background: #dc3545;
+}
+
+@media (max-width: 600px) {
+  .letter-input {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  
+  .letter-bar {
+    width: 40px;
+  }
+  
+  .letter-input-container {
+    gap: 6px;
+  }
+}
+

@@ -19,3 +19,4 @@ WHERE table_name = 'nlapp_words'
 ORDER BY column_name;
 
 
+

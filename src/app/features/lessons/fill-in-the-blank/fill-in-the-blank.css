@@ -189,6 +189,14 @@
   }
 }
 
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .btn-check {
   padding: 16px 32px;
   background: #667eea;
@@ -207,6 +215,28 @@
 }
 
 .btn-check:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-skip {
+  padding: 16px 32px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-skip:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.btn-skip:disabled {
   background: #ccc;
   cursor: not-allowed;
 }

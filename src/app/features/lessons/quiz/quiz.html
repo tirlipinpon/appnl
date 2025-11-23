@@ -25,11 +25,6 @@
     </div>
 
     <div *ngIf="showResult" class="result-section">
-      <div class="result-message" [class.correct]="isCorrect" [class.incorrect]="!isCorrect">
-        <span *ngIf="isCorrect">✓ Correct !</span>
-        <span *ngIf="!isCorrect">✗ Incorrect. La bonne réponse est : {{ correctAnswer }}</span>
-      </div>
-      
       <div class="score">
         Score : {{ score.correct }} / {{ score.total }}
       </div>

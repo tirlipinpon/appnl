@@ -11,30 +11,39 @@
     </div>
 
     <div class="input-section">
-      <div class="letter-counter">
-        Lettres : {{ letterCount }} / {{ expectedLength }}
+      <div class="letter-counter" *ngIf="letterInputs.length > 0">
+        Lettres correctes : {{ getCorrectLettersCount() }} / {{ expectedLength }}
       </div>
-      <input
-        type="text"
-        class="typing-input"
-        [class]="getInputClass()"
-        [value]="userInput"
-        (input)="onInputChange($event)"
-        (keyup.enter)="validateAnswer()"
-        [disabled]="showResult"
-        placeholder="Tapez votre réponse..."
-        autofocus
-      />
+      <div class="letter-input-container" *ngIf="letterInputs.length > 0">
+        <div 
+          *ngFor="let letter of letterInputs; let i = index" 
+          class="letter-wrapper"
+        >
+          <input
+            #letterInput
+            type="text"
+            class="letter-input"
+            [class.correct]="getLetterStatus(i) === 'correct'"
+            [class.incorrect]="getLetterStatus(i) === 'incorrect'"
+            [attr.data-letter-index]="i"
+            [value]="letterInputs[i]"
+            [disabled]="showResult || !canEditInput(i)"
+            maxlength="1"
+            (input)="onLetterInput(i, $event)"
+            (keydown)="onKeyDown(i, $event)"
+            (focus)="onInputFocus(i, $event)"
+            [autofocus]="i === 0"
+          />
+          <div 
+            class="letter-bar"
+            [class.correct]="getLetterStatus(i) === 'correct'"
+            [class.incorrect]="getLetterStatus(i) === 'incorrect'"
+          ></div>
+        </div>
+      </div>
     </div>
 
     <div *ngIf="showResult" class="result-section">
-      <div class="result-message" [class.correct]="isCorrect" [class.incorrect]="!isCorrect">
-        <span *ngIf="isCorrect">✓ Correct !</span>
-        <span *ngIf="!isCorrect">
-          ✗ Incorrect. La bonne réponse est : <strong>{{ correctAnswer }}</strong>
-        </span>
-      </div>
-      
       <div class="score">
         Score : {{ score.correct }} / {{ score.total }}
       </div>
@@ -62,10 +71,15 @@
       </div>
     </div>
 
-    <div *ngIf="!showResult" class="action-section">
-      <button class="btn-primary" (click)="validateAnswer()" [disabled]="!userInput.trim()">
-        Valider
-      </button>
+    <div *ngIf="!showResult && !isWordCompleteAndCorrect()" class="action-section">
+      <div class="action-buttons">
+        <button class="btn-primary" (click)="validateAnswer()" [disabled]="letterInputs.length === 0 || letterInputs.join('').trim().length === 0">
+          Valider
+        </button>
+        <button class="btn-skip" (click)="skipQuestion()" [disabled]="showResult">
+          Passer
+        </button>
+      </div>
     </div>
   </div>
 </div>

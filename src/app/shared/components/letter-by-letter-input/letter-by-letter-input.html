@@ -1,0 +1,35 @@
+<div class="letter-input-wrapper">
+  <div class="letter-counter" *ngIf="letterInputs.length > 0 && showValidation">
+    Lettres correctes : {{ getCorrectLettersCount() }} / {{ correctAnswer.length }}
+  </div>
+  <div class="letter-input-container" *ngIf="letterInputs.length > 0">
+    <div 
+      *ngFor="let letter of letterInputs; let i = index" 
+      class="letter-wrapper"
+    >
+      <input
+        #letterInput
+        type="text"
+        class="letter-input"
+        [class.correct]="showValidation && getLetterStatus(i) === 'correct'"
+        [class.incorrect]="showValidation && getLetterStatus(i) === 'incorrect'"
+        [attr.data-letter-index]="i"
+        [value]="letterInputs[i]"
+        [disabled]="disabled || !canEditInput(i)"
+        maxlength="1"
+        (input)="onLetterInput(i, $event)"
+        (keydown)="onKeyDown(i, $event)"
+        (focus)="onInputFocus(i, $event)"
+        (blur)="onBlur(i, $event)"
+        [autofocus]="i === 0"
+      />
+      <div 
+        class="letter-bar"
+        *ngIf="showValidation"
+        [class.correct]="getLetterStatus(i) === 'correct'"
+        [class.incorrect]="getLetterStatus(i) === 'incorrect'"
+      ></div>
+    </div>
+  </div>
+</div>
+

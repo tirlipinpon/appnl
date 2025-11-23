@@ -56,43 +56,101 @@
 }
 
 .input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   margin-bottom: 24px;
+  align-items: center;
 }
 
 .letter-counter {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 12px;
-  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
 }
 
-.typing-input {
+.letter-input-container {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
   width: 100%;
-  padding: 16px 24px;
-  font-size: 24px;
-  border: 3px solid #e0e0e0;
-  border-radius: 12px;
-  text-align: center;
-  transition: all 0.2s;
+  max-width: 100%;
 }
 
-.typing-input:focus {
+.letter-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.letter-input {
+  width: 48px;
+  height: 48px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.letter-input:focus {
   outline: none;
   border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.typing-input.correct {
+.letter-input:disabled {
+  background: #f8f9fa;
+  cursor: not-allowed;
+}
+
+.letter-input.correct {
   border-color: #28a745;
   background: #d4edda;
+  color: #155724;
 }
 
-.typing-input.incorrect {
+.letter-input.incorrect {
   border-color: #dc3545;
   background: #f8d7da;
+  color: #721c24;
 }
 
-.typing-input:disabled {
-  cursor: not-allowed;
+.letter-bar {
+  width: 48px;
+  height: 4px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.letter-bar.correct {
+  background: #28a745;
+}
+
+.letter-bar.incorrect {
+  background: #dc3545;
+}
+
+@media (max-width: 600px) {
+  .letter-input {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  
+  .letter-bar {
+    width: 40px;
+  }
+  
+  .letter-input-container {
+    gap: 6px;
+  }
 }
 
 .result-section {
@@ -130,6 +188,14 @@
   text-align: center;
 }
 
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .btn-primary {
   padding: 12px 24px;
   background: #667eea;
@@ -147,6 +213,27 @@
 }
 
 .btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-skip {
+  padding: 12px 24px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-skip:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.btn-skip:disabled {
   background: #ccc;
   cursor: not-allowed;
 }
