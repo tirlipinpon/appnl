@@ -171,3 +171,49 @@
   background: #5a6268;
 }
 
+.action-section {
+  text-align: center;
+  padding-top: 24px;
+  border-top: 2px solid #e0e0e0;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-skip {
+  padding: 12px 24px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-skip:hover {
+  background: #5a6268;
+}
+
+.btn-skip-game {
+  padding: 12px 24px;
+  background: #ff9800;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-skip-game:hover {
+  background: #f57c00;
+}
+

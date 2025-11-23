@@ -11,7 +11,7 @@
       <button 
         class="audio-btn" 
         (click)="playAudio()" 
-        *ngIf="audioService.isSupported() && currentWord && ((direction === 'french_to_dutch' && currentWord.dutch_text) || (direction === 'dutch_to_french' && currentWord.french_text))"
+        *ngIf="audioService.isSupported() && currentWord?.dutch_text"
       >
         🔊 Prononcer
       </button>
@@ -85,6 +85,9 @@
         </button>
         <button class="btn-skip" (click)="skipQuestion()" [disabled]="showResult">
           Passer
+        </button>
+        <button class="btn-skip-game" (click)="nextGameRequested.emit()">
+          ⏭️ Passer au jeu suivant
         </button>
       </div>
     </div>

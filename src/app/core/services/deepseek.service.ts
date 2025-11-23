@@ -126,7 +126,7 @@ export class DeepSeekService {
       prompt += `Contexte: ${context}. `;
     }
     
-    prompt += `La phrase doit être TRÈS SIMPLE et ÉVIDENTE pour un exercice de niveau débutant. `;
+    prompt += `La phrase doit être TRÈS SIMPLE et ÉVIDENTE pour un exercice de niveau moyen. `;
     prompt += `Le mot manquant doit être facile à deviner grâce au contexte de la phrase. `;
     
     if (existingSentences.length > 0) {

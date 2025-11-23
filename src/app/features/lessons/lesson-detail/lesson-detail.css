@@ -140,3 +140,185 @@ h2 {
   background: #5a6268;
 }
 
+/* Styles pour la gestion des mots */
+.word-management-header {
+  margin-bottom: 24px;
+  text-align: right;
+}
+
+.btn-manage-words {
+  padding: 10px 20px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-manage-words:hover {
+  background: #218838;
+}
+
+.word-management-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.word-management-section h3 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  color: #333;
+  font-size: 20px;
+}
+
+.word-management-section h4 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  color: #555;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.words-list,
+.add-existing-word,
+.add-new-word {
+  margin-bottom: 32px;
+}
+
+.word-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.word-item .word-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.word-item .word-content.hidden {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.word-french,
+.word-dutch {
+  font-weight: 600;
+  color: #333;
+}
+
+.word-separator {
+  color: #999;
+  font-weight: 300;
+}
+
+.word-status {
+  font-size: 12px;
+  color: #dc3545;
+  font-style: italic;
+}
+
+.word-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-hide,
+.btn-unhide,
+.btn-add,
+.btn-create {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-hide {
+  background: #ffc107;
+  color: #333;
+}
+
+.btn-hide:hover {
+  background: #e0a800;
+}
+
+.btn-unhide {
+  background: #28a745;
+  color: white;
+}
+
+.btn-unhide:hover {
+  background: #218838;
+}
+
+.btn-add {
+  background: #17a2b8;
+  color: white;
+}
+
+.btn-add:hover {
+  background: #138496;
+}
+
+.btn-create {
+  background: #667eea;
+  color: white;
+}
+
+.btn-create:hover {
+  background: #5568d3;
+}
+
+.available-words {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.no-words {
+  color: #999;
+  font-style: italic;
+  padding: 16px;
+  text-align: center;
+}
+
+.new-word-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.word-input {
+  flex: 1;
+  min-width: 150px;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.word-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+

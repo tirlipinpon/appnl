@@ -10,11 +10,22 @@
         <div class="language-label">{{ getFrontLanguage() }}</div>
         <div class="word-text">{{ getFrontText() }}</div>
         <div class="hint">Cliquez pour voir la traduction</div>
+        <button 
+          class="audio-btn" 
+          (click)="playAudio(); $event.stopPropagation()" 
+          *ngIf="audioService.isSupported() && isAudioButtonOnFront()"
+        >
+          🔊 Prononcer
+        </button>
       </div>
       <div class="flashcard-back">
         <div class="language-label">{{ getBackLanguage() }}</div>
         <div class="word-text">{{ getBackText() }}</div>
-        <button class="audio-btn" (click)="playAudio(); $event.stopPropagation()" *ngIf="audioService.isSupported()">
+        <button 
+          class="audio-btn" 
+          (click)="playAudio(); $event.stopPropagation()" 
+          *ngIf="audioService.isSupported() && !isAudioButtonOnFront()"
+        >
           🔊 Prononcer
         </button>
       </div>
@@ -36,5 +47,11 @@
         🔄 Refaire en {{ direction === 'french_to_dutch' ? 'néerlandais → français' : 'français → néerlandais' }}
       </button>
     </div>
+  </div>
+  
+  <div class="skip-game-section">
+    <button class="btn-skip-game" (click)="nextGameRequested.emit()">
+      ⏭️ Passer au jeu suivant
+    </button>
   </div>
 </div>

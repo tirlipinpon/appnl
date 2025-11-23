@@ -7,17 +7,102 @@
   <div *ngIf="isLoading" class="loading">Chargement de la leçon...</div>
 
   <div *ngIf="!isLoading && lesson">
+    <!-- Bouton pour gérer les mots (seulement si utilisateur connecté) -->
+    <div class="word-management-header" *ngIf="authService.getCurrentUser(); let user">
+      <button class="btn-manage-words" (click)="toggleWordManagement()">
+        {{ showWordManagement ? 'Masquer la gestion des mots' : 'Gérer les mots de cette leçon' }}
+      </button>
+    </div>
+
+    <!-- Interface de gestion des mots -->
+    <div *ngIf="showWordManagement && authService.getCurrentUser()" class="word-management-section">
+      <h3>Gestion des mots de la leçon</h3>
+      
+      <!-- Liste des mots de la leçon -->
+      <div class="words-list">
+        <h4>Mots de la leçon ({{ allWordsInLesson.length }})</h4>
+        <div class="word-item" *ngFor="let word of allWordsInLesson">
+          <div class="word-content" [class.hidden]="isWordHidden(word.id)">
+            <span class="word-french">{{ word.french_text }}</span>
+            <span class="word-separator">→</span>
+            <span class="word-dutch">{{ word.dutch_text }}</span>
+            <span class="word-status" *ngIf="isWordHidden(word.id)">(Masqué)</span>
+          </div>
+          <div class="word-actions">
+            <button 
+              *ngIf="!isWordHidden(word.id)" 
+              class="btn-hide" 
+              (click)="hideWord(word.id)"
+            >
+              Masquer
+            </button>
+            <button 
+              *ngIf="isWordHidden(word.id)" 
+              class="btn-unhide" 
+              (click)="unhideWord(word.id)"
+            >
+              Réactiver
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ajouter un mot existant -->
+      <div class="add-existing-word">
+        <h4>Ajouter un mot existant</h4>
+        <div class="available-words" *ngIf="availableWordsToAdd.length > 0">
+          <div class="word-item" *ngFor="let word of availableWordsToAdd">
+            <div class="word-content">
+              <span class="word-french">{{ word.french_text }}</span>
+              <span class="word-separator">→</span>
+              <span class="word-dutch">{{ word.dutch_text }}</span>
+            </div>
+            <button class="btn-add" (click)="addExistingWordToLesson(word.id)">
+              Ajouter
+            </button>
+          </div>
+        </div>
+        <p *ngIf="availableWordsToAdd.length === 0" class="no-words">
+          Aucun mot disponible à ajouter
+        </p>
+      </div>
+
+      <!-- Créer un nouveau mot -->
+      <div class="add-new-word">
+        <h4>Créer un nouveau mot</h4>
+        <div class="new-word-form">
+          <input 
+            type="text" 
+            placeholder="Français" 
+            [(ngModel)]="newWordForm.french_text"
+            class="word-input"
+          />
+          <span class="word-separator">→</span>
+          <input 
+            type="text" 
+            placeholder="Néerlandais" 
+            [(ngModel)]="newWordForm.dutch_text"
+            class="word-input"
+          />
+          <button class="btn-create" (click)="addNewWordToLesson()">
+            Créer et ajouter
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Étape 1: Flashcards -->
-    <div *ngIf="currentStep === 'flashcards' && words.length > 0">
+    <div *ngIf="currentStep === 'flashcards' && flashcardWords.length > 0">
       <app-flashcard-view
-        [word]="words[currentFlashcardIndex]"
+        [word]="flashcardWords[currentFlashcardIndex]"
         [currentIndex]="currentFlashcardIndex"
-        [totalWords]="words.length"
+        [totalWords]="flashcardWords.length"
         [direction]="flashcardDirection"
         (next)="onFlashcardNext()"
         (previous)="onFlashcardPrevious()"
         (finish)="onFlashcardsFinish()"
         (reverseRequested)="onFlashcardReverseRequested()"
+        (nextGameRequested)="onFlashcardNextGameRequested()"
       ></app-flashcard-view>
     </div>
 
@@ -25,10 +110,11 @@
     <div *ngIf="currentStep === 'quiz'">
       <h2>Quiz à choix multiples</h2>
       <app-quiz
-        [words]="words"
+        [words]="quizWords"
         [direction]="quizDirection"
         (completed)="onQuizCompleted($event)"
         (reverseRequested)="onQuizReverseRequested()"
+        (nextGameRequested)="onQuizNextGameRequested()"
       ></app-quiz>
     </div>
 
@@ -36,10 +122,11 @@
     <div *ngIf="currentStep === 'typing'">
       <h2>Pratique d'écriture</h2>
       <app-typing-practice
-        [words]="words"
+        [words]="typingWords"
         [direction]="typingDirection"
         (completed)="onTypingCompleted($event)"
         (reverseRequested)="onTypingReverseRequested()"
+        (nextGameRequested)="onTypingNextGameRequested()"
       ></app-typing-practice>
     </div>
 
@@ -47,10 +134,11 @@
     <div *ngIf="currentStep === 'fillInBlank'">
       <h2>Phrases à trous</h2>
       <app-fill-in-the-blank
-        [words]="words"
+        [words]="fillInBlankWords"
         [direction]="fillInBlankDirection"
         (completed)="onFillInBlankCompleted($event)"
         (reverseRequested)="onFillInBlankReverseRequested()"
+        (nextGameRequested)="onFillInBlankNextGameRequested()"
       ></app-fill-in-the-blank>
     </div>
 

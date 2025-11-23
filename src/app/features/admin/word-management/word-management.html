@@ -1,6 +1,12 @@
 <div class="word-management-container">
   <div class="header">
-    <h1>Gestion des mots</h1>
+    <div class="header-title-section">
+      <h1>Gestion des mots</h1>
+      <div class="user-email" *ngIf="authService.getCurrentUser()">
+        <span class="email-label">Utilisateur :</span>
+        <span class="email-value">{{ authService.getCurrentUser()?.email }}</span>
+      </div>
+    </div>
     <div class="header-actions">
       <button class="btn-secondary" routerLink="/admin/lessons">Gérer les leçons</button>
       <button class="btn-secondary" routerLink="/dashboard">Retour au tableau de bord</button>
@@ -76,7 +82,8 @@
 
     <!-- Liste des mots -->
     <div class="words-section">
-      <h2>Liste des mots ({{ words.length }})</h2>
+      <h2>Tous les mots disponibles ({{ words.length }})</h2>
+      <p class="info-text">Les modifications que vous apportez ici (masquer, éditer) n'affectent que votre version personnelle. Vous voyez tous les mots de base, mais vous pouvez les personnaliser pour vos leçons.</p>
       
       <div *ngFor="let group of getWordsByLesson()" class="lesson-group">
         <h3 class="lesson-title">{{ group.lesson.title }} ({{ group.words.length }})</h3>
@@ -89,11 +96,41 @@
           </div>
           
           <div *ngFor="let word of group.words" class="table-row">
-            <div class="col-french">{{ word.french_text }}</div>
-            <div class="col-dutch">{{ word.dutch_text }}</div>
+            <div class="col-french" [title]="'ID: ' + word.id">
+              {{ word.french_text }}
+              <span class="modified-badge" *ngIf="isWordEdited(word.id)">(modifié)</span>
+            </div>
+            <div class="col-dutch" [title]="'ID: ' + word.id">{{ word.dutch_text }}</div>
             <div class="col-actions">
               <button class="btn-edit" (click)="editWord(word)">Modifier</button>
-              <button class="btn-delete" (click)="deleteWord(word)">Supprimer</button>
+              <button class="btn-delete" (click)="deleteWord(word)">Masquer</button>
+              <button class="btn-swap" (click)="swapWordLanguages(word)" title="Inverser les langues">🔄</button>
+              <button *ngIf="isWordEdited(word.id)" class="btn-remove-edit" (click)="removeWordEdit(word)" title="Supprimer la modification personnelle">↩️</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mots masqués -->
+      <div *ngIf="hiddenWordIds.size > 0" class="hidden-words-section">
+        <h3>Mots masqués ({{ hiddenWordIds.size }})</h3>
+        
+        <div *ngFor="let group of getHiddenWordsByLesson()" class="lesson-group">
+          <h4 class="lesson-title-small">{{ group.lesson.title }} ({{ group.words.length }})</h4>
+          
+          <div class="words-table">
+            <div class="table-header">
+              <div class="col-french">Français</div>
+              <div class="col-dutch">Néerlandais</div>
+              <div class="col-actions">Actions</div>
+            </div>
+            
+            <div *ngFor="let word of group.words" class="table-row hidden-row">
+              <div class="col-french" [title]="'ID: ' + word.id">{{ word.french_text }}</div>
+              <div class="col-dutch" [title]="'ID: ' + word.id">{{ word.dutch_text }}</div>
+              <div class="col-actions">
+                <button class="btn-restore" (click)="restoreWord(word)">Réactiver</button>
+              </div>
             </div>
           </div>
         </div>

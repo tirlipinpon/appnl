@@ -51,5 +51,16 @@
         </button>
       </div>
     </div>
+
+    <div *ngIf="!showResult" class="action-section">
+      <div class="action-buttons">
+        <button class="btn-skip" (click)="skipQuestion()">
+          Passer
+        </button>
+        <button class="btn-skip-game" (click)="nextGameRequested.emit()">
+          ⏭️ Passer au jeu suivant
+        </button>
+      </div>
+    </div>
   </div>
 </div>

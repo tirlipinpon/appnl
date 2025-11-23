@@ -39,34 +39,6 @@
           ></textarea>
         </div>
 
-        <div class="form-group">
-          <label for="order_index">Ordre</label>
-          <input
-            id="order_index"
-            type="number"
-            formControlName="order_index"
-            min="0"
-            [class.error]="lessonForm.get('order_index')?.invalid && lessonForm.get('order_index')?.touched"
-          />
-          <span class="error-message" *ngIf="lessonForm.get('order_index')?.hasError('required') && lessonForm.get('order_index')?.touched">
-            L'ordre est requis
-          </span>
-          <span class="error-message" *ngIf="lessonForm.get('order_index')?.hasError('min') && lessonForm.get('order_index')?.touched">
-            L'ordre doit être supérieur ou égal à 0
-          </span>
-        </div>
-
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              formControlName="enable_fill_in_blank"
-            />
-            <span>Activer le test "Phrases à trous" (avec DeepSeek)</span>
-          </label>
-          <p class="help-text">Si activé, les élèves devront compléter des phrases générées par IA après les autres tests.</p>
-        </div>
-
         <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
         <div class="success-message" *ngIf="successMessage">{{ successMessage }}</div>
 
@@ -98,11 +70,20 @@
               <span class="lesson-feature disabled" *ngIf="lesson.enable_fill_in_blank === false">
                 ✗ Phrases à trous désactivé
               </span>
+              <span class="lesson-status disabled-badge" *ngIf="isLessonDisabled(lesson.id)">
+                ⚠ Désactivée pour vous
+              </span>
             </div>
           </div>
           <div class="lesson-actions">
             <button class="btn-edit" (click)="editLesson(lesson)">Modifier</button>
-            <button class="btn-delete" (click)="deleteLesson(lesson)">Supprimer</button>
+            <button 
+              class="btn-delete" 
+              [class.btn-enable]="isLessonDisabled(lesson.id)"
+              (click)="deleteLesson(lesson, $event)"
+            >
+              {{ isLessonDisabled(lesson.id) ? 'Réactiver' : 'Désactiver' }}
+            </button>
           </div>
         </div>
       </div>

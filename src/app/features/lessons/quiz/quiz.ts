@@ -21,6 +21,7 @@ export class Quiz implements OnInit {
   @Input() direction: QuizDirection = 'french_to_dutch';
   @Output() completed = new EventEmitter<{ correct: number; total: number }>();
   @Output() reverseRequested = new EventEmitter<void>();
+  @Output() nextGameRequested = new EventEmitter<void>();
 
   currentIndex = 0;
   currentWord: Word | null = null;
@@ -56,15 +57,48 @@ export class Quiz implements OnInit {
     }
   }
 
+  /**
+   * Mélange un tableau de manière aléatoire (algorithme Fisher-Yates)
+   */
+  private shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
   async generateChoices(correct: string) {
     const excludeIds = this.words.map(w => w.id);
-    const randomWords = await this.wordService.getRandomWords(3, excludeIds);
     
-    const wrongAnswers = randomWords.map(w => 
+    // Sélectionner des mots similaires de la DB au lieu de mots complètement aléatoires
+    const similarWords = await this.wordService.getSimilarWords(
+      correct, 
+      3, 
+      excludeIds,
+      this.direction
+    );
+    
+    const wrongAnswers = similarWords.map(w => 
       this.direction === 'french_to_dutch' ? w.dutch_text : w.french_text
     );
 
-    this.choices = [correct, ...wrongAnswers].sort(() => Math.random() - 0.5);
+    // Si on n'a pas assez de mots similaires dans la DB, compléter avec des mots aléatoires
+    if (wrongAnswers.length < 3) {
+      const randomWords = await this.wordService.getRandomWords(
+        3 - wrongAnswers.length, 
+        [...excludeIds, ...similarWords.map(w => w.id)]
+      );
+      const additionalAnswers = randomWords.map(w => 
+        this.direction === 'french_to_dutch' ? w.dutch_text : w.french_text
+      );
+      wrongAnswers.push(...additionalAnswers);
+    }
+
+    // Mélanger les choix de manière aléatoire avec Fisher-Yates
+    const allChoices = [correct, ...wrongAnswers.slice(0, 3)];
+    this.choices = this.shuffleArray(allChoices);
   }
 
   selectAnswer(answer: string) {
@@ -97,6 +131,19 @@ export class Quiz implements OnInit {
   nextQuestion() {
     this.currentIndex++;
     this.loadQuestion();
+  }
+
+  skipQuestion() {
+    if (this.currentIndex === this.words.length - 1) {
+      // Si c'est la dernière question, afficher la section de résultat avec les options de fin
+      this.showResult = true;
+      this.isCorrect = false;
+      // Ne pas incrémenter le score car on passe sans répondre
+    } else {
+      // Passer à la question suivante sans répondre
+      this.currentIndex++;
+      this.loadQuestion();
+    }
   }
 
   getQuestionText(): string {

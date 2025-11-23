@@ -4,7 +4,9 @@
     <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
   </div>
 
-  <div *ngIf="isLoading" class="loading">Génération des phrases...</div>
+  <div *ngIf="isLoading" class="loading">Génération de la première phrase...</div>
+  
+  <div *ngIf="isLoadingNext" class="loading-next">Chargement de la phrase suivante...</div>
 
   <div *ngIf="!isLoading && currentSentence" class="fill-in-blank-content">
     <div class="question-section">
@@ -17,7 +19,7 @@
       <button 
         class="audio-btn" 
         (click)="playAudio()" 
-        *ngIf="audioService.isSupported() && getCurrentWord() && ((direction === 'french_to_dutch' && getCurrentWord()?.dutch_text) || (direction === 'dutch_to_french' && getCurrentWord()?.french_text))"
+        *ngIf="audioService.isSupported() && getCurrentWord()?.dutch_text"
       >
         🔊 Prononcer
       </button>
@@ -71,6 +73,13 @@
         >
           Passer
         </button>
+        <button 
+          class="btn-skip-game" 
+          (click)="nextGameRequested.emit()"
+          *ngIf="!showResult"
+        >
+          ⏭️ Passer au jeu suivant
+        </button>
       </div>
     </div>
 
@@ -82,9 +91,11 @@
       <button 
         class="btn-primary" 
         (click)="nextQuestion()"
+        [disabled]="isLoadingNext"
         *ngIf="currentIndex < words.length - 1"
       >
-        Question suivante →
+        <span *ngIf="!isLoadingNext">Question suivante →</span>
+        <span *ngIf="isLoadingNext">Chargement...</span>
       </button>
       <div *ngIf="currentIndex === words.length - 1" class="completion-actions">
         <button 

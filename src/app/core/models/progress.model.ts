@@ -18,6 +18,7 @@ export interface UserLesson {
   user_id: string;
   lesson_id: string;
   completed: boolean;
+  disabled?: boolean;
   completed_at?: string;
   created_at?: string;
   updated_at?: string;

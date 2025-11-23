@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Word } from '../../../core/models/word.model';
 import { AudioService } from '../../../core/services/audio.service';
@@ -9,7 +9,7 @@ import { AudioService } from '../../../core/services/audio.service';
   templateUrl: './flashcard-view.html',
   styleUrl: './flashcard-view.css',
 })
-export class FlashcardView {
+export class FlashcardView implements OnChanges {
   audioService = inject(AudioService);
 
   @Input() word!: Word;
@@ -20,9 +20,18 @@ export class FlashcardView {
   @Output() previous = new EventEmitter<void>();
   @Output() finish = new EventEmitter<void>();
   @Output() reverseRequested = new EventEmitter<void>();
+  @Output() nextGameRequested = new EventEmitter<void>();
 
   showDutch = false;
   showFrench = true;
+
+  ngOnChanges(changes: SimpleChanges) {
+    // Réinitialiser l'état de la carte quand la direction change
+    if (changes['direction'] && !changes['direction'].firstChange) {
+      this.showDutch = false;
+      this.showFrench = true;
+    }
+  }
 
   flipCard() {
     if (this.showFrench) {
@@ -71,15 +80,21 @@ export class FlashcardView {
     return this.direction === 'french_to_dutch' ? this.word.dutch_text : this.word.french_text;
   }
 
+  /**
+   * Détermine si le bouton audio doit être sur le front ou le back
+   * Le bouton doit être sur la face qui affiche le néerlandais (la langue à apprendre)
+   */
+  isAudioButtonOnFront(): boolean {
+    // Si direction === 'dutch_to_french' : le néerlandais est sur le front → bouton sur front
+    // Si direction === 'french_to_dutch' : le néerlandais est sur le back → bouton sur back
+    return this.direction === 'dutch_to_french';
+  }
+
   playAudio() {
-    // Lire la langue affichée au dos de la carte (la langue à apprendre)
-    // Si direction === 'french_to_dutch' : on apprend le néerlandais
-    // Si direction === 'dutch_to_french' : on apprend le français
-    const textToSpeak = this.getBackText();
-    const lang = this.direction === 'french_to_dutch' ? 'nl-NL' : 'fr-FR';
-    
-    if (textToSpeak) {
-      this.audioService.speak(textToSpeak, lang);
+    // Toujours lire le néerlandais (la langue à apprendre)
+    // Peu importe la direction, on apprend toujours le néerlandais
+    if (this.word.dutch_text) {
+      this.audioService.speak(this.word.dutch_text, 'nl-NL');
     }
   }
 }

@@ -21,6 +21,7 @@ export class TypingPractice implements OnInit, AfterViewInit {
   @Input() direction: QuizDirection = 'french_to_dutch';
   @Output() completed = new EventEmitter<{ correct: number; total: number }>();
   @Output() reverseRequested = new EventEmitter<void>();
+  @Output() nextGameRequested = new EventEmitter<void>();
 
   @ViewChildren('letterInput') letterInputElements!: QueryList<ElementRef<HTMLInputElement>>;
 
@@ -384,17 +385,10 @@ export class TypingPractice implements OnInit, AfterViewInit {
   }
 
   playAudio(): void {
-    // Lire la langue que l'utilisateur apprend
-    // Si direction === 'french_to_dutch' : on apprend le néerlandais
-    // Si direction === 'dutch_to_french' : on apprend le français
-    if (!this.currentWord) return;
-    
-    if (this.direction === 'french_to_dutch' && this.currentWord.dutch_text) {
-      // On apprend le néerlandais
+    // Toujours lire le néerlandais (la langue à apprendre)
+    // Peu importe la direction, on apprend toujours le néerlandais
+    if (this.currentWord?.dutch_text) {
       this.audioService.speak(this.currentWord.dutch_text, 'nl-NL');
-    } else if (this.direction === 'dutch_to_french' && this.currentWord.french_text) {
-      // On apprend le français
-      this.audioService.speak(this.currentWord.french_text, 'fr-FR');
     }
   }
 

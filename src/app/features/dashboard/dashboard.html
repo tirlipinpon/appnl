@@ -44,12 +44,34 @@
     <div class="section">
       <h2>Leçons disponibles</h2>
       <div class="lessons-grid">
-        <div *ngFor="let lesson of lessons" class="lesson-card" [routerLink]="['/lessons', lesson.id]">
+        <div *ngFor="let lesson of getVisibleLessons()" class="lesson-card" [routerLink]="['/lessons', lesson.id]">
           <div class="lesson-header">
             <h3>{{ lesson.title }}</h3>
             <span *ngIf="isLessonCompleted(lesson.id)" class="badge completed">✓ Complétée</span>
           </div>
           <p *ngIf="lesson.description" class="lesson-description">{{ lesson.description }}</p>
+          
+          <div class="lesson-stats" *ngIf="getLessonStats(lesson.id).totalWords > 0">
+            <div class="stat-row">
+              <span class="stat-label">Mots totaux :</span>
+              <span class="stat-value">{{ getLessonStats(lesson.id).totalWords }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Maîtrisés :</span>
+              <span class="stat-value success">{{ getLessonStats(lesson.id).masteredWords }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Restants :</span>
+              <span class="stat-value warning">{{ getLessonStats(lesson.id).remainingWords }}</span>
+            </div>
+            <div class="stat-row progress-row">
+              <div class="progress-bar-mini">
+                <div class="progress-fill-mini" [style.width.%]="getLessonStats(lesson.id).successRate"></div>
+              </div>
+              <span class="stat-percentage">{{ getLessonStats(lesson.id).successRate }}%</span>
+            </div>
+          </div>
+          
           <div class="lesson-footer">
             <span class="lesson-order">Leçon {{ lesson.order_index }}</span>
           </div>
@@ -59,10 +81,10 @@
 
     <!-- Navigation -->
     <div class="navigation">
-      <button class="btn-primary" routerLink="/lessons">Voir toutes les leçons</button>
       <div class="admin-buttons">
-        <button class="btn-secondary" routerLink="/admin/words">Gérer les mots</button>
-        <button class="btn-secondary" routerLink="/admin/lessons">Gérer les leçons</button>
+        <button type="button" class="btn-secondary" (click)="navigateToLessons()">Gérer mes leçons</button>
+        <button type="button" class="btn-secondary" routerLink="/admin/words">Gérer les mots</button>
+        <button type="button" class="btn-secondary" routerLink="/admin/lessons">Gérer les leçons</button>
       </div>
     </div>
   </div>

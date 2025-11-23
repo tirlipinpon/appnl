@@ -7,16 +7,70 @@
   <div *ngIf="isLoading" class="loading">Chargement des leçons...</div>
 
   <div *ngIf="!isLoading" class="lessons-grid">
-    <div *ngFor="let lesson of lessons" class="lesson-card" [routerLink]="['/lessons', lesson.id]">
+    <!-- Leçons actives -->
+    <div *ngFor="let lesson of getVisibleLessons()" class="lesson-card" [routerLink]="['/lessons', lesson.id]">
       <div class="lesson-header">
         <h2>{{ lesson.title }}</h2>
         <span *ngIf="isLessonCompleted(lesson.id)" class="badge completed">✓ Complétée</span>
         <span *ngIf="!isLessonCompleted(lesson.id)" class="badge pending">En cours</span>
       </div>
       <p *ngIf="lesson.description" class="lesson-description">{{ lesson.description }}</p>
+      
+      <div class="lesson-stats" *ngIf="getLessonStats(lesson.id).totalWords > 0">
+        <div class="stat-row">
+          <span class="stat-label">Mots totaux :</span>
+          <span class="stat-value">{{ getLessonStats(lesson.id).totalWords }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Maîtrisés :</span>
+          <span class="stat-value success">{{ getLessonStats(lesson.id).masteredWords }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Restants :</span>
+          <span class="stat-value warning">{{ getLessonStats(lesson.id).remainingWords }}</span>
+        </div>
+        <div class="stat-row progress-row">
+          <div class="progress-bar-mini">
+            <div class="progress-fill-mini" [style.width.%]="getLessonStats(lesson.id).successRate"></div>
+          </div>
+          <span class="stat-percentage">{{ getLessonStats(lesson.id).successRate }}%</span>
+        </div>
+      </div>
+      
       <div class="lesson-footer">
         <span class="lesson-order">Leçon {{ lesson.order_index }}</span>
-        <button class="btn-primary-small">Commencer</button>
+        <div class="lesson-actions">
+          <button 
+            class="btn-disable" 
+            (click)="toggleLessonDisabled(lesson, $event)"
+            [title]="'Désactiver cette leçon'"
+          >
+            ⚙️
+          </button>
+          <button class="btn-primary-small">Commencer</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Section des leçons désactivées -->
+    <div *ngIf="hasDisabledLessons()" class="disabled-lessons-section">
+      <h3 class="disabled-section-title">Leçons désactivées</h3>
+      <div *ngFor="let lesson of getDisabledLessons()" class="lesson-card disabled">
+        <div class="lesson-header">
+          <h2>{{ lesson.title }}</h2>
+          <span class="badge disabled">Désactivée</span>
+        </div>
+        <p *ngIf="lesson.description" class="lesson-description">{{ lesson.description }}</p>
+        <div class="lesson-footer">
+          <span class="lesson-order">Leçon {{ lesson.order_index }}</span>
+          <button 
+            class="btn-enable" 
+            (click)="toggleLessonDisabled(lesson, $event)"
+            [title]="'Réactiver cette leçon'"
+          >
+            Réactiver
+          </button>
+        </div>
       </div>
     </div>
   </div>

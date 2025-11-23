@@ -25,6 +25,7 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
   @Input() direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
   @Output() completed = new EventEmitter<{ correct: number; total: number }>();
   @Output() reverseRequested = new EventEmitter<void>();
+  @Output() nextGameRequested = new EventEmitter<void>();
 
   @ViewChildren('letterInput') letterInputElements!: QueryList<ElementRef<HTMLInputElement>>;
 
@@ -36,7 +37,9 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
   isCorrect = false;
   score = { correct: 0, total: 0 };
   isLoading = false;
+  isLoadingNext = false;
   sentences: FillInTheBlankSentence[] = [];
+  sentencePromises: Map<number, Promise<FillInTheBlankSentence>> = new Map();
 
   ngAfterViewInit() {
     // S'assurer que les inputs sont bien initialisés
@@ -59,45 +62,116 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
 
   async loadSentences() {
     this.isLoading = true;
+    this.sentences = [];
+    this.sentencePromises.clear();
+    
     try {
-      // Générer une phrase pour chaque mot
-      this.sentences = [];
+      // Initialiser le tableau de phrases avec des valeurs null
+      this.sentences = new Array(this.words.length).fill(null);
       
-      for (const word of this.words) {
-        // Selon la direction, générer une phrase dans la langue appropriée
+      // Charger immédiatement la première phrase
+      await this.loadSentenceForIndex(0);
+      
+      // Charger la première phrase dans le composant
+      if (this.sentences[0]) {
+        this.currentSentence = this.sentences[0];
+        this.initializeLetterInputs();
+        setTimeout(() => {
+          this.focusFirstInput();
+        }, 200);
+      }
+      
+      // Charger les phrases suivantes en arrière-plan (lazy loading)
+      this.preloadNextSentences();
+    } catch (error) {
+      console.error('Error loading sentences:', error);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  /**
+   * Charge une phrase pour un index spécifique
+   */
+  private async loadSentenceForIndex(index: number): Promise<void> {
+    if (index < 0 || index >= this.words.length) {
+      return;
+    }
+
+    // Si la phrase est déjà chargée, ne rien faire
+    if (this.sentences[index]) {
+      return;
+    }
+
+    // Si une promesse de chargement existe déjà, attendre qu'elle se termine
+    if (this.sentencePromises.has(index)) {
+      await this.sentencePromises.get(index);
+      return;
+    }
+
+    const word = this.words[index];
+    if (!word) {
+      return;
+    }
+
+    // Créer une promesse pour charger cette phrase
+    const promise = (async () => {
+      try {
+        let sentence: FillInTheBlankSentence;
+        
         if (this.direction === 'dutch_to_french') {
           // Phrase en néerlandais avec mot néerlandais manquant
-          const sentence = await this.deepSeekService.getOrGenerateFillInTheBlankSentence(
+          sentence = await this.deepSeekService.getOrGenerateFillInTheBlankSentence(
             word.id,
             word.dutch_text,
             'dutch_to_french',
             []
           );
-          this.sentences.push(sentence);
         } else {
           // Phrase en français avec mot français manquant
-          const sentence = await this.deepSeekService.getOrGenerateFillInTheBlankSentence(
+          sentence = await this.deepSeekService.getOrGenerateFillInTheBlankSentence(
             word.id,
             word.french_text,
             'french_to_dutch',
             []
           );
-          this.sentences.push(sentence);
         }
+        
+        // Stocker la phrase dans le tableau
+        this.sentences[index] = sentence;
+        return sentence;
+      } catch (error) {
+        console.error(`Error loading sentence for index ${index}:`, error);
+        // En cas d'erreur, créer une phrase de fallback
+        const fallbackSentence: FillInTheBlankSentence = {
+          sentence: `_____`,
+          missingWord: this.direction === 'dutch_to_french' ? word.dutch_text : word.french_text
+        };
+        this.sentences[index] = fallbackSentence;
+        return fallbackSentence;
+      } finally {
+        // Retirer la promesse une fois terminée
+        this.sentencePromises.delete(index);
       }
-      
-      if (this.sentences.length > 0) {
-        this.currentSentence = this.sentences[0];
-        this.initializeLetterInputs();
-        // Mettre le focus sur le premier input après le chargement
-        setTimeout(() => {
-          this.focusFirstInput();
-        }, 200);
-      }
-    } catch (error) {
-      console.error('Error loading sentences:', error);
-    } finally {
-      this.isLoading = false;
+    })();
+
+    // Stocker la promesse
+    this.sentencePromises.set(index, promise);
+    
+    // Attendre que la promesse se termine
+    await promise;
+  }
+
+  /**
+   * Précharge les phrases suivantes en arrière-plan
+   */
+  private preloadNextSentences(): void {
+    // Précharger les 2-3 prochaines phrases en arrière-plan
+    for (let i = 1; i < Math.min(4, this.words.length); i++) {
+      // Ne pas bloquer, charger en arrière-plan
+      this.loadSentenceForIndex(i).catch(error => {
+        console.error(`Error preloading sentence ${i}:`, error);
+      });
     }
   }
 
@@ -133,7 +207,7 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
     }
   }
 
-  skipQuestion(): void {
+  async skipQuestion(): Promise<void> {
     // Si c'est le dernier mot, afficher les options de fin d'exercice
     if (this.currentIndex === this.words.length - 1) {
       // Afficher la section de résultat avec les options de fin
@@ -142,13 +216,37 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
       // Ne pas incrémenter le score car on passe sans valider
     } else {
       // Passer au mot suivant sans valider
-      this.nextQuestion();
+      await this.nextQuestion();
     }
   }
 
-  nextQuestion() {
+  async nextQuestion() {
     if (this.currentIndex < this.words.length - 1) {
-      this.currentIndex++;
+      const nextIndex = this.currentIndex + 1;
+      
+      // Vérifier si la phrase suivante est déjà chargée
+      if (!this.sentences[nextIndex]) {
+        // Si la phrase n'est pas encore chargée, attendre qu'elle soit prête
+        this.isLoadingNext = true;
+        try {
+          await this.loadSentenceForIndex(nextIndex);
+        } catch (error) {
+          console.error('Error loading next sentence:', error);
+        } finally {
+          this.isLoadingNext = false;
+        }
+      }
+      
+      // Précharger les phrases suivantes en arrière-plan
+      const preloadIndex = nextIndex + 1;
+      if (preloadIndex < this.words.length) {
+        this.loadSentenceForIndex(preloadIndex).catch(error => {
+          console.error(`Error preloading sentence ${preloadIndex}:`, error);
+        });
+      }
+      
+      // Passer à la phrase suivante
+      this.currentIndex = nextIndex;
       this.currentSentence = this.sentences[this.currentIndex];
       this.userInput = '';
       this.showResult = false;
@@ -189,18 +287,11 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
   }
 
   playAudio(): void {
-    // Lire la langue que l'utilisateur apprend
-    // Si direction === 'french_to_dutch' : on apprend le néerlandais
-    // Si direction === 'dutch_to_french' : on apprend le français
+    // Toujours lire le néerlandais (la langue à apprendre)
+    // Peu importe la direction, on apprend toujours le néerlandais
     const currentWord = this.getCurrentWord();
-    if (!currentWord) return;
-    
-    if (this.direction === 'french_to_dutch' && currentWord.dutch_text) {
-      // On apprend le néerlandais
+    if (currentWord?.dutch_text) {
       this.audioService.speak(currentWord.dutch_text, 'nl-NL');
-    } else if (this.direction === 'dutch_to_french' && currentWord.french_text) {
-      // On apprend le français
-      this.audioService.speak(currentWord.french_text, 'fr-FR');
     }
   }
 

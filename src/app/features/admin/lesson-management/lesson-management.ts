@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { LessonService } from '../../../core/services/lesson.service';
+import { ProgressService } from '../../../core/services/progress.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { Lesson } from '../../../core/models/lesson.model';
 
 @Component({
@@ -13,9 +15,13 @@ import { Lesson } from '../../../core/models/lesson.model';
 })
 export class LessonManagement implements OnInit {
   private lessonService = inject(LessonService);
+  private progressService = inject(ProgressService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
 
   lessons: Lesson[] = [];
+  userLessons: any[] = [];
+  disabledLessons: Set<string> = new Set();
   lessonForm: FormGroup;
   editingLesson: Lesson | null = null;
   isLoading = true;
@@ -25,9 +31,7 @@ export class LessonManagement implements OnInit {
   constructor() {
     this.lessonForm = this.fb.group({
       title: ['', [Validators.required]],
-      description: [''],
-      order_index: [0, [Validators.required, Validators.min(0)]],
-      enable_fill_in_blank: [true]
+      description: ['']
     });
   }
 
@@ -39,6 +43,18 @@ export class LessonManagement implements OnInit {
     try {
       this.isLoading = true;
       this.lessons = await this.lessonService.getLessons();
+      
+      // Charger l'état disabled pour l'utilisateur actuel
+      const user = this.authService.getCurrentUser();
+      if (user) {
+        this.userLessons = await this.progressService.getUserLessons(user.id);
+        this.disabledLessons.clear();
+        for (const userLesson of this.userLessons) {
+          if (userLesson.disabled === true) {
+            this.disabledLessons.add(userLesson.lesson_id);
+          }
+        }
+      }
     } catch (error) {
       console.error('Error loading lessons:', error);
       this.errorMessage = 'Erreur lors du chargement des leçons';
@@ -62,12 +78,17 @@ export class LessonManagement implements OnInit {
         await this.lessonService.updateLesson(this.editingLesson.id, formValue);
         this.successMessage = 'Leçon mise à jour avec succès';
       } else {
-        // Si pas d'order_index spécifié, mettre à la fin
-        if (!formValue.order_index && formValue.order_index !== 0) {
-          formValue.order_index = this.lessons.length;
+        // Toujours activer fill_in_blank et définir order_index automatiquement
+        formValue.enable_fill_in_blank = true;
+        formValue.order_index = this.lessons.length;
+        
+        const result = await this.lessonService.createLesson(formValue);
+        
+        if (result.titleWasModified) {
+          this.successMessage = `Leçon ajoutée avec succès. Le titre "${result.originalTitle}" existait déjà, il a été renommé en "${result.lesson.title}"`;
+        } else {
+          this.successMessage = 'Leçon ajoutée avec succès';
         }
-        await this.lessonService.createLesson(formValue);
-        this.successMessage = 'Leçon ajoutée avec succès';
       }
 
       this.lessonForm.reset();
@@ -82,9 +103,7 @@ export class LessonManagement implements OnInit {
     this.editingLesson = lesson;
     this.lessonForm.patchValue({
       title: lesson.title,
-      description: lesson.description || '',
-      order_index: lesson.order_index,
-      enable_fill_in_blank: lesson.enable_fill_in_blank !== false
+      description: lesson.description || ''
     });
   }
 
@@ -93,18 +112,46 @@ export class LessonManagement implements OnInit {
     this.lessonForm.reset();
   }
 
-  async deleteLesson(lesson: Lesson) {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer la leçon "${lesson.title}" ?`)) {
+  async deleteLesson(lesson: Lesson, event: Event) {
+    event.stopPropagation();
+    
+    const user = this.authService.getCurrentUser();
+    if (!user) {
+      this.errorMessage = 'Vous devez être connecté pour désactiver une leçon';
+      return;
+    }
+
+    const isCurrentlyDisabled = this.disabledLessons.has(lesson.id);
+    const action = isCurrentlyDisabled ? 'réactiver' : 'désactiver';
+    
+    if (!confirm(`Êtes-vous sûr de vouloir ${action} la leçon "${lesson.title}" ?`)) {
       return;
     }
 
     try {
-      // Note: Vous devrez peut-être ajouter une méthode deleteLesson dans le service
-      // Pour l'instant, on affiche juste un message
-      this.errorMessage = 'La suppression de leçon n\'est pas encore implémentée';
+      this.errorMessage = '';
+      this.successMessage = '';
+
+      if (isCurrentlyDisabled) {
+        await this.progressService.enableLesson(user.id, lesson.id);
+        this.disabledLessons.delete(lesson.id);
+        this.successMessage = `La leçon "${lesson.title}" a été réactivée`;
+      } else {
+        await this.progressService.disableLesson(user.id, lesson.id);
+        this.disabledLessons.add(lesson.id);
+        this.successMessage = `La leçon "${lesson.title}" a été désactivée`;
+      }
+
+      // Recharger les userLessons pour avoir les données à jour
+      this.userLessons = await this.progressService.getUserLessons(user.id);
     } catch (error: any) {
-      this.errorMessage = error.message || 'Erreur lors de la suppression';
+      console.error('Error toggling lesson disabled state:', error);
+      this.errorMessage = error.message || 'Erreur lors de la modification de l\'état de la leçon';
     }
+  }
+
+  isLessonDisabled(lessonId: string): boolean {
+    return this.disabledLessons.has(lessonId);
   }
 }
 

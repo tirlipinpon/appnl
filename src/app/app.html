@@ -1,1 +1,22 @@
-<router-outlet />
+<div class="app-container">
+  <!-- Header global avec email utilisateur -->
+  <header class="global-header" *ngIf="authService.getCurrentUser()">
+    <div class="header-content">
+      <div class="header-left">
+        <h1 class="app-title">Nlapp</h1>
+      </div>
+      <div class="header-right">
+        <div class="user-info">
+          <span class="user-email-label">Utilisateur :</span>
+          <span class="user-email-value">{{ authService.getCurrentUser()?.email }}</span>
+        </div>
+        <button class="btn-logout" (click)="logout()">Déconnexion</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenu principal -->
+  <main class="main-content">
+    <router-outlet />
+  </main>
+</div>

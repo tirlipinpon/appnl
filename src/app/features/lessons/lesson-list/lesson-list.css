@@ -97,6 +97,73 @@ h1 {
   line-height: 1.5;
 }
 
+.lesson-stats {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.stat-row:last-child {
+  margin-bottom: 0;
+}
+
+.stat-label {
+  color: #666;
+  font-weight: 500;
+}
+
+.stat-value {
+  color: #333;
+  font-weight: 600;
+}
+
+.stat-value.success {
+  color: #28a745;
+}
+
+.stat-value.warning {
+  color: #ff9800;
+}
+
+.progress-row {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.progress-bar-mini {
+  flex: 1;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-right: 8px;
+}
+
+.progress-fill-mini {
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.stat-percentage {
+  color: #667eea;
+  font-weight: 700;
+  font-size: 14px;
+  min-width: 45px;
+  text-align: right;
+}
+
 .lesson-footer {
   display: flex;
   justify-content: space-between;
@@ -121,5 +188,75 @@ h1 {
 
 .btn-primary-small:hover {
   background: #5568d3;
+}
+
+.lesson-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-disable {
+  padding: 8px 12px;
+  background: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-disable:hover {
+  background: #f8f9fa;
+  border-color: #999;
+  color: #333;
+}
+
+.btn-enable {
+  padding: 8px 16px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-enable:hover {
+  background: #218838;
+}
+
+.badge.disabled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.lesson-card.disabled {
+  opacity: 0.6;
+  border-color: #ddd;
+  cursor: default;
+}
+
+.lesson-card.disabled:hover {
+  border-color: #ddd;
+  box-shadow: none;
+  transform: none;
+}
+
+.disabled-lessons-section {
+  grid-column: 1 / -1;
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 2px solid #e0e0e0;
+}
+
+.disabled-section-title {
+  margin: 0 0 24px 0;
+  color: #666;
+  font-size: 20px;
+  font-weight: 600;
 }
 
