@@ -1,29 +1,24 @@
 <div class="dashboard-container">
-  <div class="header">
-    <h1>Tableau de bord</h1>
-    <button class="btn-secondary" (click)="authService.signOut()">Déconnexion</button>
-  </div>
-
   <div *ngIf="isLoading" class="loading">Chargement...</div>
 
   <div *ngIf="!isLoading" class="dashboard-content">
     <!-- Statistiques -->
     <div class="stats-grid">
       <div class="stat-card">
-        <h3>Mots appris</h3>
-        <p class="stat-value">{{ stats.totalWordsSeen }}</p>
+        <h3>Mots</h3>
+        <span class="stat-value">{{ stats.totalWordsSeen }}</span>
       </div>
       <div class="stat-card">
-        <h3>Taux de réussite</h3>
-        <p class="stat-value">{{ getSuccessRate() }}%</p>
+        <h3>Réussite</h3>
+        <span class="stat-value">{{ getSuccessRate() }}%</span>
       </div>
       <div class="stat-card">
-        <h3>Leçons complétées</h3>
-        <p class="stat-value">{{ stats.completedLessons }}</p>
+        <h3>Leçons</h3>
+        <span class="stat-value">{{ stats.completedLessons }}</span>
       </div>
       <div class="stat-card highlight">
         <h3>À revoir</h3>
-        <p class="stat-value">{{ stats.wordsToReview }}</p>
+        <span class="stat-value">{{ stats.wordsToReview }}</span>
       </div>
     </div>
 

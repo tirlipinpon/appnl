@@ -10,25 +10,24 @@
 
   <div *ngIf="!isLoading && currentSentence" class="fill-in-blank-content">
     <div class="question-section">
-      <h3 class="question-label">Complétez la phrase en écrivant le mot manquant</h3>
+      <div class="question-header">
+        <h3 class="question-label">Complétez la phrase en écrivant le mot manquant</h3>
+        <button 
+          class="audio-btn" 
+          (click)="playAudio()" 
+          *ngIf="audioService.isSupported() && getCurrentWord()?.dutch_text"
+        >
+          🔊
+        </button>
+      </div>
       <div class="sentence-text">{{ getSentenceWithBlank() }}</div>
       <div *ngIf="direction === 'french_to_dutch'" class="help-hint">
         <span class="help-label">Aide :</span>
         <span class="help-word">{{ getCurrentWord()?.dutch_text }}</span>
       </div>
-      <button 
-        class="audio-btn" 
-        (click)="playAudio()" 
-        *ngIf="audioService.isSupported() && getCurrentWord()?.dutch_text"
-      >
-        🔊 Prononcer
-      </button>
     </div>
 
     <div class="input-section">
-      <div class="letter-counter" *ngIf="letterInputs.length > 0">
-        Lettres correctes : {{ getCorrectLettersCount() }} / {{ getCorrectAnswer().length }}
-      </div>
       <div class="letter-input-container" *ngIf="letterInputs.length > 0">
         <div 
           *ngFor="let letter of letterInputs; let i = index" 
@@ -56,31 +55,26 @@
           ></div>
         </div>
       </div>
-      <div class="action-buttons">
-        <button 
-          class="btn-check" 
-          (click)="checkAnswer()"
-          [disabled]="showResult || letterInputs.length === 0 || letterInputs.join('').trim().length === 0 || isWordCompleteAndCorrect()"
-          *ngIf="!isWordCompleteAndCorrect()"
-        >
-          Vérifier
-        </button>
-        <button 
-          class="btn-skip" 
-          (click)="skipQuestion()"
-          [disabled]="showResult"
-          *ngIf="!showResult"
-        >
-          Passer
-        </button>
-        <button 
-          class="btn-skip-game" 
-          (click)="nextGameRequested.emit()"
-          *ngIf="!showResult"
-        >
-          ⏭️ Passer au jeu suivant
-        </button>
-      </div>
+    </div>
+
+    <div class="navigation-buttons">
+      <button class="btn-nav" (click)="previousQuestion()" [disabled]="currentIndex === 0 || isLoadingNext">
+        ← Précédent
+      </button>
+      <button class="btn-primary" (click)="nextQuestion()" [disabled]="isLoadingNext" *ngIf="currentIndex < words.length - 1 && !showResult">
+        <span *ngIf="!isLoadingNext">Suivant →</span>
+        <span *ngIf="isLoadingNext">Chargement...</span>
+      </button>
+    </div>
+
+    <div class="action-buttons">
+      <button 
+        class="btn-skip-game" 
+        (click)="nextGameRequested.emit()"
+        *ngIf="!showResult"
+      >
+        ⏭️ Passer au jeu suivant
+      </button>
     </div>
 
     <div *ngIf="showResult" class="result-section">

@@ -6,7 +6,6 @@
 
   <div *ngIf="currentWord" class="quiz-content">
     <div class="question-section">
-      <h3 class="question-label">{{ getQuestionLabel() }}</h3>
       <div class="question-text">{{ getQuestionText() }}</div>
     </div>
 
@@ -24,18 +23,27 @@
       </button>
     </div>
 
+    <div class="navigation-buttons">
+      <button class="btn-nav" (click)="previousQuestion()" [disabled]="currentIndex === 0">
+        ← Précédent
+      </button>
+      <button class="btn-primary" (click)="nextQuestion()" *ngIf="currentIndex < words.length - 1 && !showResult">
+        Suivant →
+      </button>
+      <button 
+        class="btn-primary" 
+        (click)="nextQuestion()"
+        *ngIf="currentIndex < words.length - 1 && showResult"
+      >
+        Question suivante →
+      </button>
+    </div>
+
     <div *ngIf="showResult" class="result-section">
       <div class="score">
         Score : {{ score.correct }} / {{ score.total }}
       </div>
 
-      <button 
-        class="btn-primary" 
-        (click)="nextQuestion()"
-        *ngIf="currentIndex < words.length - 1"
-      >
-        Question suivante →
-      </button>
       <div *ngIf="currentIndex === words.length - 1" class="completion-actions">
         <button 
           class="btn-primary" 
@@ -54,9 +62,6 @@
 
     <div *ngIf="!showResult" class="action-section">
       <div class="action-buttons">
-        <button class="btn-skip" (click)="skipQuestion()">
-          Passer
-        </button>
         <button class="btn-skip-game" (click)="nextGameRequested.emit()">
           ⏭️ Passer au jeu suivant
         </button>

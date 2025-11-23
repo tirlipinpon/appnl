@@ -44,16 +44,23 @@ h1 {
 }
 
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
 .stat-card {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
+  border-radius: 8px;
+  padding: 16px 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
 
 .stat-card.highlight {
@@ -62,10 +69,11 @@ h1 {
 }
 
 .stat-card h3 {
-  margin: 0 0 12px 0;
-  font-size: 14px;
+  margin: 0;
+  font-size: 13px;
   font-weight: 500;
   color: #666;
+  white-space: nowrap;
 }
 
 .stat-card.highlight h3 {
@@ -74,9 +82,10 @@ h1 {
 
 .stat-value {
   margin: 0;
-  font-size: 36px;
+  font-size: 24px;
   font-weight: 700;
   color: #333;
+  white-space: nowrap;
 }
 
 .stat-card.highlight .stat-value {

@@ -66,10 +66,18 @@
   text-align: center;
 }
 
+.question-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
 .question-label {
   font-size: 16px;
   color: #666;
-  margin-bottom: 16px;
+  margin: 0;
   font-weight: 500;
 }
 
@@ -109,16 +117,20 @@
 }
 
 .audio-btn {
-  margin-top: 16px;
-  padding: 10px 20px;
+  padding: 8px 12px;
   background: #667eea;
   color: white;
   border: 2px solid #667eea;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
 }
 
 .audio-btn:hover {
@@ -360,5 +372,34 @@
 
 .btn-secondary:hover {
   background: #5a6268;
+}
+
+.navigation-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.btn-nav {
+  padding: 12px 24px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-nav:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.btn-nav:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 

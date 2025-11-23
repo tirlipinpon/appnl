@@ -6,7 +6,6 @@
 
   <div *ngIf="currentWord" class="typing-content">
     <div class="question-section">
-      <h3 class="question-label">{{ getQuestionLabel() }}</h3>
       <div class="question-text">{{ getQuestionText() }}</div>
       <button 
         class="audio-btn" 
@@ -50,6 +49,15 @@
       </div>
     </div>
 
+    <div class="navigation-buttons">
+      <button class="btn-nav" (click)="previousQuestion()" [disabled]="currentIndex === 0">
+        ← Précédent
+      </button>
+      <button class="btn-primary" (click)="nextQuestion()" *ngIf="currentIndex < words.length - 1 && !showResult">
+        Suivant →
+      </button>
+    </div>
+
     <div *ngIf="showResult" class="result-section">
       <div class="score">
         Score : {{ score.correct }} / {{ score.total }}
@@ -80,12 +88,6 @@
 
     <div *ngIf="!showResult && !isWordCompleteAndCorrect()" class="action-section">
       <div class="action-buttons">
-        <button class="btn-primary" (click)="validateAnswer()" [disabled]="letterInputs.length === 0 || letterInputs.join('').trim().length === 0">
-          Valider
-        </button>
-        <button class="btn-skip" (click)="skipQuestion()" [disabled]="showResult">
-          Passer
-        </button>
         <button class="btn-skip-game" (click)="nextGameRequested.emit()">
           ⏭️ Passer au jeu suivant
         </button>

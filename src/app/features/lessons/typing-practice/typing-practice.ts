@@ -359,6 +359,14 @@ export class TypingPractice implements OnInit, AfterViewInit {
     }
   }
 
+  previousQuestion() {
+    if (this.currentIndex > 0) {
+      this.currentIndex--;
+      this.loadQuestion();
+      // Le focus sera mis dans loadQuestion()
+    }
+  }
+
   nextQuestion() {
     if (this.currentIndex < this.words.length - 1) {
       this.currentIndex++;

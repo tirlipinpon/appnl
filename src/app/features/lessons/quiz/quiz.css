@@ -217,3 +217,32 @@
   background: #f57c00;
 }
 
+.navigation-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.btn-nav {
+  padding: 12px 24px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-nav:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.btn-nav:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+

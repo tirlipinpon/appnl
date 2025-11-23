@@ -7,7 +7,6 @@
       </div>
       <div class="header-right">
         <div class="user-info">
-          <span class="user-email-label">Utilisateur :</span>
           <span class="user-email-value">{{ authService.getCurrentUser()?.email }}</span>
         </div>
         <button class="btn-logout" (click)="logout()">Déconnexion</button>

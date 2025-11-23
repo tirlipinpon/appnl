@@ -220,6 +220,35 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
     }
   }
 
+  async previousQuestion() {
+    if (this.currentIndex > 0) {
+      const prevIndex = this.currentIndex - 1;
+      
+      // Vérifier si la phrase précédente est déjà chargée
+      if (!this.sentences[prevIndex]) {
+        // Si la phrase n'est pas encore chargée, attendre qu'elle soit prête
+        this.isLoadingNext = true;
+        try {
+          await this.loadSentenceForIndex(prevIndex);
+        } catch (error) {
+          console.error('Error loading previous sentence:', error);
+        } finally {
+          this.isLoadingNext = false;
+        }
+      }
+      
+      // Passer à la phrase précédente
+      this.currentIndex = prevIndex;
+      this.currentSentence = this.sentences[this.currentIndex];
+      this.userInput = '';
+      this.showResult = false;
+      this.isCorrect = false;
+      this.initializeLetterInputs();
+      // Mettre le focus sur le premier input du nouveau mot
+      this.focusFirstInput();
+    }
+  }
+
   async nextQuestion() {
     if (this.currentIndex < this.words.length - 1) {
       const nextIndex = this.currentIndex + 1;

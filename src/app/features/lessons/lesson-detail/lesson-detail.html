@@ -1,18 +1,19 @@
 <div class="lesson-detail-container">
   <div class="header">
-    <button class="btn-back" routerLink="/lessons">← Retour aux leçons</button>
+    <button class="btn-back" routerLink="/lessons">Retour</button>
     <h1 *ngIf="lesson">{{ lesson.title }}</h1>
+    <button 
+      *ngIf="authService.getCurrentUser() && !isLoading && lesson" 
+      class="btn-manage-words" 
+      (click)="toggleWordManagement()"
+    >
+      {{ showWordManagement ? 'Masquer' : 'Gérer mots' }}
+    </button>
   </div>
 
   <div *ngIf="isLoading" class="loading">Chargement de la leçon...</div>
 
   <div *ngIf="!isLoading && lesson">
-    <!-- Bouton pour gérer les mots (seulement si utilisateur connecté) -->
-    <div class="word-management-header" *ngIf="authService.getCurrentUser(); let user">
-      <button class="btn-manage-words" (click)="toggleWordManagement()">
-        {{ showWordManagement ? 'Masquer la gestion des mots' : 'Gérer les mots de cette leçon' }}
-      </button>
-    </div>
 
     <!-- Interface de gestion des mots -->
     <div *ngIf="showWordManagement && authService.getCurrentUser()" class="word-management-section">
@@ -108,7 +109,6 @@
 
     <!-- Étape 2: Quiz à choix multiples -->
     <div *ngIf="currentStep === 'quiz'">
-      <h2>Quiz à choix multiples</h2>
       <app-quiz
         [words]="quizWords"
         [direction]="quizDirection"
@@ -120,7 +120,6 @@
 
     <!-- Étape 3: Pratique d'écriture -->
     <div *ngIf="currentStep === 'typing'">
-      <h2>Pratique d'écriture</h2>
       <app-typing-practice
         [words]="typingWords"
         [direction]="typingDirection"
@@ -132,7 +131,6 @@
 
     <!-- Étape 4: Phrases à trous -->
     <div *ngIf="currentStep === 'fillInBlank'">
-      <h2>Phrases à trous</h2>
       <app-fill-in-the-blank
         [words]="fillInBlankWords"
         [direction]="fillInBlankDirection"

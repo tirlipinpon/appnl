@@ -128,6 +128,13 @@ export class Quiz implements OnInit {
     }
   }
 
+  previousQuestion() {
+    if (this.currentIndex > 0) {
+      this.currentIndex--;
+      this.loadQuestion();
+    }
+  }
+
   nextQuestion() {
     this.currentIndex++;
     this.loadQuestion();

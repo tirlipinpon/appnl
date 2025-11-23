@@ -1,9 +1,4 @@
 <div class="flashcard-container">
-  <div class="progress-bar">
-    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / totalWords) * 100"></div>
-    <span class="progress-text">{{ currentIndex + 1 }} / {{ totalWords }}</span>
-  </div>
-
   <div class="flashcard" (click)="flipCard()">
     <div class="flashcard-inner" [class.flipped]="showDutch">
       <div class="flashcard-front">
@@ -17,6 +12,10 @@
         >
           🔊 Prononcer
         </button>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="((currentIndex + 1) / totalWords) * 100"></div>
+          <span class="progress-text">{{ currentIndex + 1 }} / {{ totalWords }}</span>
+        </div>
       </div>
       <div class="flashcard-back">
         <div class="language-label">{{ getBackLanguage() }}</div>
