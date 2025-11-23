@@ -21,13 +21,15 @@ export class DeepSeekService {
    * @param word Le mot (néerlandais ou français selon la direction)
    * @param direction La direction de la traduction
    * @param existingSentences Phrases déjà utilisées (pour varier si génération nécessaire)
+   * @param frenchTranslation La traduction française du mot (pour clarifier le contexte quand on génère une phrase en néerlandais)
    * @returns Une phrase avec le mot manquant
    */
   async getOrGenerateFillInTheBlankSentence(
     wordId: string,
     word: string,
     direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french',
-    existingSentences: string[] = []
+    existingSentences: string[] = [],
+    frenchTranslation?: string
   ): Promise<FillInTheBlankSentence> {
     // 1. Vérifier si une phrase existe déjà dans la DB
     const storedSentence = await this.getStoredSentence(wordId, direction);
@@ -45,7 +47,8 @@ export class DeepSeekService {
       word,
       existingSentences,
       undefined,
-      direction
+      direction,
+      frenchTranslation
     );
     
     // 3. Enregistrer la phrase dans la DB pour réutilisation future
@@ -60,16 +63,18 @@ export class DeepSeekService {
    * @param existingSentences Phrases déjà utilisées pour ce mot (pour éviter les répétitions)
    * @param context Contexte optionnel pour la phrase
    * @param direction La direction de la traduction (détermine la langue de la phrase)
+   * @param frenchTranslation La traduction française du mot (pour clarifier le contexte quand on génère une phrase en néerlandais)
    * @returns Une phrase avec le mot manquant
    */
   async generateFillInTheBlankSentence(
     word: string,
     existingSentences: string[] = [],
     context?: string,
-    direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french'
+    direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french',
+    frenchTranslation?: string
   ): Promise<FillInTheBlankSentence> {
     try {
-      const prompt = this.buildPrompt(word, existingSentences, context, direction);
+      const prompt = this.buildPrompt(word, existingSentences, context, direction, frenchTranslation);
       
       const response = await fetch(this.apiUrl, {
         method: 'POST',
@@ -117,10 +122,16 @@ export class DeepSeekService {
     word: string, 
     existingSentences: string[] = [], 
     context?: string,
-    direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french'
+    direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french',
+    frenchTranslation?: string
   ): string {
     const language = direction === 'dutch_to_french' ? 'néerlandais' : 'français';
     let prompt = `Crée une phrase SIMPLE et ÉVIDENTE en ${language} qui utilise le mot "${word}". `;
+    
+    // Ajouter la traduction française pour clarifier le contexte quand on génère une phrase en néerlandais
+    if (direction === 'dutch_to_french' && frenchTranslation) {
+      prompt += `Le mot néerlandais "${word}" signifie "${frenchTranslation}" en français. Utilise ce sens précis du mot dans la phrase en néerlandais. `;
+    }
     
     if (context) {
       prompt += `Contexte: ${context}. `;

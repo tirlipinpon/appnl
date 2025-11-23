@@ -121,11 +121,13 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
         
         if (this.direction === 'dutch_to_french') {
           // Phrase en néerlandais avec mot néerlandais manquant
+          // On passe aussi la traduction française pour clarifier le contexte
           sentence = await this.deepSeekService.getOrGenerateFillInTheBlankSentence(
             word.id,
             word.dutch_text,
             'dutch_to_french',
-            []
+            [],
+            word.french_text
           );
         } else {
           // Phrase en français avec mot français manquant
