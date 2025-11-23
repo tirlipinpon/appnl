@@ -72,10 +72,14 @@ export class FlashcardView {
   }
 
   playAudio() {
-    if (this.direction === 'french_to_dutch' && this.word.dutch_text) {
-      this.audioService.speak(this.word.dutch_text, 'nl-NL');
-    } else if (this.direction === 'dutch_to_french' && this.word.french_text) {
-      this.audioService.speak(this.word.french_text, 'fr-FR');
+    // Lire la langue affichée au dos de la carte (la langue à apprendre)
+    // Si direction === 'french_to_dutch' : on apprend le néerlandais
+    // Si direction === 'dutch_to_french' : on apprend le français
+    const textToSpeak = this.getBackText();
+    const lang = this.direction === 'french_to_dutch' ? 'nl-NL' : 'fr-FR';
+    
+    if (textToSpeak) {
+      this.audioService.speak(textToSpeak, lang);
     }
   }
 }

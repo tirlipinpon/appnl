@@ -8,6 +8,13 @@
     <div class="question-section">
       <h3 class="question-label">{{ getQuestionLabel() }}</h3>
       <div class="question-text">{{ getQuestionText() }}</div>
+      <button 
+        class="audio-btn" 
+        (click)="playAudio()" 
+        *ngIf="audioService.isSupported() && currentWord && ((direction === 'french_to_dutch' && currentWord.dutch_text) || (direction === 'dutch_to_french' && currentWord.french_text))"
+      >
+        🔊 Prononcer
+      </button>
     </div>
 
     <div class="input-section">

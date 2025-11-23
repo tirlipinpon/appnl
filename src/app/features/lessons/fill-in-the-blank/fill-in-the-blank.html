@@ -14,6 +14,13 @@
         <span class="help-label">Aide :</span>
         <span class="help-word">{{ getCurrentWord()?.dutch_text }}</span>
       </div>
+      <button 
+        class="audio-btn" 
+        (click)="playAudio()" 
+        *ngIf="audioService.isSupported() && getCurrentWord() && ((direction === 'french_to_dutch' && getCurrentWord()?.dutch_text) || (direction === 'dutch_to_french' && getCurrentWord()?.french_text))"
+      >
+        🔊 Prononcer
+      </button>
     </div>
 
     <div class="input-section">

@@ -214,25 +214,49 @@ export class DeepSeekService {
           .eq('id', wordId)
           .single();
         
-        if (error || !data) {
+        if (error) {
+          console.error('Error fetching dutch sentence:', error);
+          return null;
+        }
+        
+        if (!data) {
           return null;
         }
         
         const sentence = data.fill_in_blank_sentence;
-        return sentence && sentence.trim() ? sentence : null;
+        if (sentence && sentence.trim()) {
+          console.log(`Phrase néerlandaise récupérée depuis DB pour wordId: ${wordId}`);
+          return sentence;
+        }
+        return null;
       } else {
+        // Direction: french_to_dutch - phrase en français
         const { data, error } = await this.supabaseService.client
           .from('nlapp_words')
           .select('fill_in_blank_sentence_fr')
           .eq('id', wordId)
           .single();
         
-        if (error || !data) {
+        if (error) {
+          console.error('Error fetching french sentence:', error);
+          // Si la colonne n'existe pas, afficher un message d'aide
+          if (error.code === '42703' || error.code === 'PGRST204') {
+            console.error('⚠️ La colonne fill_in_blank_sentence_fr n\'existe pas dans la base de données.');
+            console.error('💡 Solution: Exécutez le script SQL fix-french-sentence-column.sql dans Supabase.');
+          }
+          return null;
+        }
+        
+        if (!data) {
           return null;
         }
         
         const sentence = data.fill_in_blank_sentence_fr;
-        return sentence && sentence.trim() ? sentence : null;
+        if (sentence && sentence.trim()) {
+          console.log(`Phrase française récupérée depuis DB pour wordId: ${wordId}`);
+          return sentence;
+        }
+        return null;
       }
     } catch (error) {
       console.error('Error fetching stored sentence:', error);
@@ -253,13 +277,29 @@ export class DeepSeekService {
         ? { fill_in_blank_sentence: sentence }
         : { fill_in_blank_sentence_fr: sentence };
       
-      const { error } = await this.supabaseService.client
+      const columnName = direction === 'dutch_to_french' 
+        ? 'fill_in_blank_sentence' 
+        : 'fill_in_blank_sentence_fr';
+      
+      console.log(`Sauvegarde phrase ${direction === 'dutch_to_french' ? 'néerlandaise' : 'française'} dans ${columnName} pour wordId: ${wordId}`);
+      
+      const { data, error } = await this.supabaseService.client
         .from('nlapp_words')
         .update(updateData)
-        .eq('id', wordId);
+        .eq('id', wordId)
+        .select();
       
       if (error) {
         console.error('Error saving sentence to database:', error);
+        console.error('Update data:', updateData);
+        console.error('WordId:', wordId);
+        // Si la colonne n'existe pas, afficher un message d'aide
+        if (error.code === '42703' || error.code === 'PGRST204') {
+          console.error('⚠️ La colonne fill_in_blank_sentence_fr n\'existe pas dans la base de données.');
+          console.error('💡 Solution: Exécutez le script SQL fix-french-sentence-column.sql dans Supabase.');
+        }
+      } else {
+        console.log(`Phrase ${direction === 'dutch_to_french' ? 'néerlandaise' : 'française'} sauvegardée avec succès pour wordId: ${wordId}`);
       }
     } catch (error) {
       console.error('Error saving sentence:', error);

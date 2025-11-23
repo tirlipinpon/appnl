@@ -6,6 +6,7 @@ import { DeepSeekService, FillInTheBlankSentence } from '../../../core/services/
 import { ProgressService } from '../../../core/services/progress.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { AudioService } from '../../../core/services/audio.service';
 
 @Component({
   selector: 'app-fill-in-the-blank',
@@ -18,6 +19,7 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
   private progressService = inject(ProgressService);
   private authService = inject(AuthService);
   private supabaseService = inject(SupabaseService);
+  audioService = inject(AudioService);
 
   @Input() words: Word[] = [];
   @Input() direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
@@ -184,6 +186,22 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
     return this.direction === 'dutch_to_french' 
       ? currentWord.dutch_text 
       : currentWord.french_text;
+  }
+
+  playAudio(): void {
+    // Lire la langue que l'utilisateur apprend
+    // Si direction === 'french_to_dutch' : on apprend le néerlandais
+    // Si direction === 'dutch_to_french' : on apprend le français
+    const currentWord = this.getCurrentWord();
+    if (!currentWord) return;
+    
+    if (this.direction === 'french_to_dutch' && currentWord.dutch_text) {
+      // On apprend le néerlandais
+      this.audioService.speak(currentWord.dutch_text, 'nl-NL');
+    } else if (this.direction === 'dutch_to_french' && currentWord.french_text) {
+      // On apprend le français
+      this.audioService.speak(currentWord.french_text, 'fr-FR');
+    }
   }
 
   initializeLetterInputs(): void {

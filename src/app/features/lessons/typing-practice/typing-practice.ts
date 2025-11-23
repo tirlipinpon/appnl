@@ -4,6 +4,7 @@ import { Word } from '../../../core/models/word.model';
 import { ProgressService } from '../../../core/services/progress.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { QuizDirection } from '../../../core/models/progress.model';
+import { AudioService } from '../../../core/services/audio.service';
 
 @Component({
   selector: 'app-typing-practice',
@@ -14,6 +15,7 @@ import { QuizDirection } from '../../../core/models/progress.model';
 export class TypingPractice implements OnInit, AfterViewInit {
   private progressService = inject(ProgressService);
   private authService = inject(AuthService);
+  audioService = inject(AudioService);
 
   @Input() words: Word[] = [];
   @Input() direction: QuizDirection = 'french_to_dutch';
@@ -379,6 +381,21 @@ export class TypingPractice implements OnInit, AfterViewInit {
     return this.direction === 'french_to_dutch' 
       ? 'Écrivez en néerlandais :' 
       : 'Écrivez en français :';
+  }
+
+  playAudio(): void {
+    // Lire la langue que l'utilisateur apprend
+    // Si direction === 'french_to_dutch' : on apprend le néerlandais
+    // Si direction === 'dutch_to_french' : on apprend le français
+    if (!this.currentWord) return;
+    
+    if (this.direction === 'french_to_dutch' && this.currentWord.dutch_text) {
+      // On apprend le néerlandais
+      this.audioService.speak(this.currentWord.dutch_text, 'nl-NL');
+    } else if (this.direction === 'dutch_to_french' && this.currentWord.french_text) {
+      // On apprend le français
+      this.audioService.speak(this.currentWord.french_text, 'fr-FR');
+    }
   }
 
 }
