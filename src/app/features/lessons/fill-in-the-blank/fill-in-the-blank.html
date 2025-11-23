@@ -1,25 +1,10 @@
 <div class="fill-in-blank-container">
-  <div class="progress-bar">
-    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
-    <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
-  </div>
-
   <div *ngIf="isLoading" class="loading">Génération de la première phrase...</div>
   
   <div *ngIf="isLoadingNext" class="loading-next">Chargement de la phrase suivante...</div>
 
   <div *ngIf="!isLoading && currentSentence" class="fill-in-blank-content">
     <div class="question-section">
-      <div class="question-header">
-        <h3 class="question-label">Complétez la phrase en écrivant le mot manquant</h3>
-        <button 
-          class="audio-btn" 
-          (click)="playAudio()" 
-          *ngIf="audioService.isSupported() && getCurrentWord()?.dutch_text"
-        >
-          🔊
-        </button>
-      </div>
       <div class="sentence-text">{{ getSentenceWithBlank() }}</div>
       <div *ngIf="direction === 'french_to_dutch'" class="help-hint">
         <span class="help-label">Aide :</span>
@@ -54,6 +39,13 @@
             [class.incorrect]="getLetterStatus(i) === 'incorrect'"
           ></div>
         </div>
+        <button 
+          class="audio-btn" 
+          (click)="playAudio()" 
+          *ngIf="audioService.isSupported() && getCurrentWord()?.dutch_text"
+        >
+          🔊
+        </button>
       </div>
     </div>
 
@@ -106,6 +98,11 @@
         </button>
       </div>
     </div>
+  </div>
+
+  <div class="progress-bar" *ngIf="!isLoading && currentSentence">
+    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
+    <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
   </div>
 </div>
 

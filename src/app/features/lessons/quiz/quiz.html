@@ -1,9 +1,4 @@
 <div class="quiz-container">
-  <div class="progress-bar">
-    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
-    <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
-  </div>
-
   <div *ngIf="currentWord" class="quiz-content">
     <div class="question-section">
       <div class="question-text">{{ getQuestionText() }}</div>
@@ -67,5 +62,10 @@
         </button>
       </div>
     </div>
+  </div>
+
+  <div class="progress-bar" *ngIf="currentWord">
+    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
+    <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
   </div>
 </div>

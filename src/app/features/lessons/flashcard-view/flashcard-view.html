@@ -10,12 +10,8 @@
           (click)="playAudio(); $event.stopPropagation()" 
           *ngIf="audioService.isSupported() && isAudioButtonOnFront()"
         >
-          🔊 Prononcer
+          🔊
         </button>
-        <div class="progress-bar">
-          <div class="progress-fill" [style.width.%]="((currentIndex + 1) / totalWords) * 100"></div>
-          <span class="progress-text">{{ currentIndex + 1 }} / {{ totalWords }}</span>
-        </div>
       </div>
       <div class="flashcard-back">
         <div class="language-label">{{ getBackLanguage() }}</div>
@@ -25,7 +21,7 @@
           (click)="playAudio(); $event.stopPropagation()" 
           *ngIf="audioService.isSupported() && !isAudioButtonOnFront()"
         >
-          🔊 Prononcer
+          🔊
         </button>
       </div>
     </div>
@@ -52,5 +48,10 @@
     <button class="btn-skip-game" (click)="nextGameRequested.emit()">
       ⏭️ Passer au jeu suivant
     </button>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / totalWords) * 100"></div>
+    <span class="progress-text">{{ currentIndex + 1 }} / {{ totalWords }}</span>
   </div>
 </div>

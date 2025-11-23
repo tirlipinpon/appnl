@@ -1,25 +1,10 @@
 <div class="typing-practice-container">
-  <div class="progress-bar">
-    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
-    <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
-  </div>
-
   <div *ngIf="currentWord" class="typing-content">
     <div class="question-section">
       <div class="question-text">{{ getQuestionText() }}</div>
-      <button 
-        class="audio-btn" 
-        (click)="playAudio()" 
-        *ngIf="audioService.isSupported() && currentWord?.dutch_text"
-      >
-        🔊 Prononcer
-      </button>
     </div>
 
     <div class="input-section">
-      <div class="letter-counter" *ngIf="letterInputs.length > 0">
-        Lettres correctes : {{ getCorrectLettersCount() }} / {{ expectedLength }}
-      </div>
       <div class="letter-input-container" *ngIf="letterInputs.length > 0">
         <div 
           *ngFor="let letter of letterInputs; let i = index" 
@@ -46,6 +31,13 @@
             [class.incorrect]="getLetterStatus(i) === 'incorrect'"
           ></div>
         </div>
+        <button 
+          class="audio-btn" 
+          (click)="playAudio()" 
+          *ngIf="audioService.isSupported() && currentWord?.dutch_text"
+        >
+          🔊
+        </button>
       </div>
     </div>
 
@@ -56,6 +48,13 @@
       <button class="btn-primary" (click)="nextQuestion()" *ngIf="currentIndex < words.length - 1 && !showResult">
         Suivant →
       </button>
+      <button 
+        class="btn-primary" 
+        (click)="nextQuestion()"
+        *ngIf="currentIndex < words.length - 1 && showResult"
+      >
+        Question suivante →
+      </button>
     </div>
 
     <div *ngIf="showResult" class="result-section">
@@ -63,13 +62,6 @@
         Score : {{ score.correct }} / {{ score.total }}
       </div>
 
-      <button 
-        class="btn-primary" 
-        (click)="nextQuestion()"
-        *ngIf="currentIndex < words.length - 1"
-      >
-        Question suivante →
-      </button>
       <div *ngIf="currentIndex === words.length - 1" class="completion-actions">
         <button 
           class="btn-primary" 
@@ -93,5 +85,10 @@
         </button>
       </div>
     </div>
+  </div>
+
+  <div class="progress-bar" *ngIf="currentWord">
+    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
+    <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
   </div>
 </div>
