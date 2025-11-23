@@ -38,55 +38,18 @@ export class FillInTheBlank implements OnInit {
   async loadSentences() {
     this.isLoading = true;
     try {
-      const user = this.authService.getCurrentUser();
-      
       // Générer une phrase pour chaque mot
       this.sentences = [];
-      const generatedSentences: { [wordId: string]: string[] } = {};
       
       for (const word of this.words) {
-        // Récupérer les phrases déjà générées dans cette session pour ce mot
-        const sessionSentences = generatedSentences[word.id] || [];
-        
-        // Récupérer les phrases déjà utilisées pour ce mot depuis la DB
-        let existingSentences: string[] = [];
-        if (user) {
-          try {
-            // Récupérer les tentatives précédentes pour ce mot
-            // Note: On pourrait stocker la phrase dans la DB, mais pour l'instant
-            // on utilise une approche basée sur les tentatives précédentes
-            const { data } = await this.supabaseService.client
-              .from('nlapp_quiz_attempts')
-              .select('correct_answer')
-              .eq('word_id', word.id)
-              .eq('quiz_type', 'fill_in_blank')
-              .order('created_at', { ascending: false })
-              .limit(5);
-            
-            // Pour varier, on peut utiliser le nombre de tentatives précédentes
-            // comme indicateur pour demander une variation
-            if (data && data.length > 0) {
-              // On indique qu'il y a déjà eu des tentatives pour varier
-              existingSentences = [`Phrase précédente pour "${word.dutch_text}"`];
-            }
-          } catch (error) {
-            console.error('Error fetching existing sentences:', error);
-          }
-        }
-        
-        // Combiner les phrases de la session et celles de la DB
-        const allExisting = [...sessionSentences, ...existingSentences];
-        
-        const sentence = await this.deepSeekService.generateFillInTheBlankSentence(
+        // Récupérer ou générer la phrase (avec vérification DB et enregistrement automatique)
+        // Si une phrase existe déjà dans la DB, elle sera utilisée
+        // Sinon, DeepSeek génère une nouvelle phrase et l'enregistre
+        const sentence = await this.deepSeekService.getOrGenerateFillInTheBlankSentence(
+          word.id,
           word.dutch_text,
-          allExisting
+          [] // Pas besoin de passer existingSentences car on réutilise la phrase de la DB
         );
-        
-        // Stocker la phrase générée pour éviter les répétitions dans cette session
-        if (!generatedSentences[word.id]) {
-          generatedSentences[word.id] = [];
-        }
-        generatedSentences[word.id].push(sentence.sentence);
         
         this.sentences.push(sentence);
       }

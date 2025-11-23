@@ -4,6 +4,7 @@ export interface Word {
   french_text: string;
   dutch_text: string;
   audio_url?: string;
+  fill_in_blank_sentence?: string;
   created_at?: string;
   updated_at?: string;
 }

@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { SupabaseService } from './supabase.service';
 
 export interface FillInTheBlankSentence {
   sentence: string;
@@ -9,8 +10,45 @@ export interface FillInTheBlankSentence {
   providedIn: 'root'
 })
 export class DeepSeekService {
+  private supabaseService = inject(SupabaseService);
   private readonly apiKey = 'sk-db6617f690b04336b0469ffa1c6bf839';
   private readonly apiUrl = 'https://api.deepseek.com/v1/chat/completions';
+
+  /**
+   * Récupère ou génère une phrase à trous pour un mot
+   * Vérifie d'abord dans la DB, sinon génère avec DeepSeek et enregistre
+   * @param wordId L'ID du mot dans la DB
+   * @param word Le mot en néerlandais
+   * @param existingSentences Phrases déjà utilisées (pour varier si génération nécessaire)
+   * @returns Une phrase avec le mot manquant
+   */
+  async getOrGenerateFillInTheBlankSentence(
+    wordId: string,
+    word: string,
+    existingSentences: string[] = []
+  ): Promise<FillInTheBlankSentence> {
+    // 1. Vérifier si une phrase existe déjà dans la DB
+    const storedSentence = await this.getStoredSentence(wordId);
+    
+    if (storedSentence) {
+      // Utiliser la phrase de la DB
+      return {
+        sentence: storedSentence,
+        missingWord: word
+      };
+    }
+    
+    // 2. Générer une nouvelle phrase avec DeepSeek
+    const newSentence = await this.generateFillInTheBlankSentence(
+      word,
+      existingSentences
+    );
+    
+    // 3. Enregistrer la phrase dans la DB pour réutilisation future
+    await this.saveSentenceToDatabase(wordId, newSentence.sentence);
+    
+    return newSentence;
+  }
 
   /**
    * Génère une phrase à trous en néerlandais avec le mot manquant
@@ -147,6 +185,50 @@ export class DeepSeekService {
       sentence,
       missingWord: word
     };
+  }
+
+  /**
+   * Récupère la phrase stockée dans la DB pour un mot
+   */
+  private async getStoredSentence(wordId: string): Promise<string | null> {
+    try {
+      const { data, error } = await this.supabaseService.client
+        .from('nlapp_words')
+        .select('fill_in_blank_sentence')
+        .eq('id', wordId)
+        .single();
+      
+      if (error) {
+        // Si erreur ou pas de données, retourner null
+        return null;
+      }
+      
+      // Retourner la phrase si elle existe et n'est pas vide
+      return data?.fill_in_blank_sentence && data.fill_in_blank_sentence.trim() 
+        ? data.fill_in_blank_sentence 
+        : null;
+    } catch (error) {
+      console.error('Error fetching stored sentence:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Enregistre la phrase générée dans la DB pour réutilisation future
+   */
+  private async saveSentenceToDatabase(wordId: string, sentence: string): Promise<void> {
+    try {
+      const { error } = await this.supabaseService.client
+        .from('nlapp_words')
+        .update({ fill_in_blank_sentence: sentence })
+        .eq('id', wordId);
+      
+      if (error) {
+        console.error('Error saving sentence to database:', error);
+      }
+    } catch (error) {
+      console.error('Error saving sentence:', error);
+    }
   }
 }
 
