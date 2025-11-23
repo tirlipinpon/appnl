@@ -18,17 +18,19 @@ export class DeepSeekService {
    * Récupère ou génère une phrase à trous pour un mot
    * Vérifie d'abord dans la DB, sinon génère avec DeepSeek et enregistre
    * @param wordId L'ID du mot dans la DB
-   * @param word Le mot en néerlandais
+   * @param word Le mot (néerlandais ou français selon la direction)
+   * @param direction La direction de la traduction
    * @param existingSentences Phrases déjà utilisées (pour varier si génération nécessaire)
    * @returns Une phrase avec le mot manquant
    */
   async getOrGenerateFillInTheBlankSentence(
     wordId: string,
     word: string,
+    direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french',
     existingSentences: string[] = []
   ): Promise<FillInTheBlankSentence> {
     // 1. Vérifier si une phrase existe déjà dans la DB
-    const storedSentence = await this.getStoredSentence(wordId);
+    const storedSentence = await this.getStoredSentence(wordId, direction);
     
     if (storedSentence) {
       // Utiliser la phrase de la DB
@@ -41,29 +43,33 @@ export class DeepSeekService {
     // 2. Générer une nouvelle phrase avec DeepSeek
     const newSentence = await this.generateFillInTheBlankSentence(
       word,
-      existingSentences
+      existingSentences,
+      undefined,
+      direction
     );
     
     // 3. Enregistrer la phrase dans la DB pour réutilisation future
-    await this.saveSentenceToDatabase(wordId, newSentence.sentence);
+    await this.saveSentenceToDatabase(wordId, newSentence.sentence, direction);
     
     return newSentence;
   }
 
   /**
-   * Génère une phrase à trous en néerlandais avec le mot manquant
-   * @param word Le mot à utiliser dans la phrase (en néerlandais)
+   * Génère une phrase à trous avec le mot manquant
+   * @param word Le mot à utiliser dans la phrase
    * @param existingSentences Phrases déjà utilisées pour ce mot (pour éviter les répétitions)
    * @param context Contexte optionnel pour la phrase
+   * @param direction La direction de la traduction (détermine la langue de la phrase)
    * @returns Une phrase avec le mot manquant
    */
   async generateFillInTheBlankSentence(
     word: string,
     existingSentences: string[] = [],
-    context?: string
+    context?: string,
+    direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french'
   ): Promise<FillInTheBlankSentence> {
     try {
-      const prompt = this.buildPrompt(word, existingSentences, context);
+      const prompt = this.buildPrompt(word, existingSentences, context, direction);
       
       const response = await fetch(this.apiUrl, {
         method: 'POST',
@@ -107,8 +113,14 @@ export class DeepSeekService {
     }
   }
 
-  private buildPrompt(word: string, existingSentences: string[] = [], context?: string): string {
-    let prompt = `Crée une phrase SIMPLE et ÉVIDENTE en néerlandais qui utilise le mot "${word}". `;
+  private buildPrompt(
+    word: string, 
+    existingSentences: string[] = [], 
+    context?: string,
+    direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french'
+  ): string {
+    const language = direction === 'dutch_to_french' ? 'néerlandais' : 'français';
+    let prompt = `Crée une phrase SIMPLE et ÉVIDENTE en ${language} qui utilise le mot "${word}". `;
     
     if (context) {
       prompt += `Contexte: ${context}. `;
@@ -188,25 +200,40 @@ export class DeepSeekService {
   }
 
   /**
-   * Récupère la phrase stockée dans la DB pour un mot
+   * Récupère la phrase stockée dans la DB pour un mot selon la direction
    */
-  private async getStoredSentence(wordId: string): Promise<string | null> {
+  private async getStoredSentence(
+    wordId: string, 
+    direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french'
+  ): Promise<string | null> {
     try {
-      const { data, error } = await this.supabaseService.client
-        .from('nlapp_words')
-        .select('fill_in_blank_sentence')
-        .eq('id', wordId)
-        .single();
-      
-      if (error) {
-        // Si erreur ou pas de données, retourner null
-        return null;
+      if (direction === 'dutch_to_french') {
+        const { data, error } = await this.supabaseService.client
+          .from('nlapp_words')
+          .select('fill_in_blank_sentence')
+          .eq('id', wordId)
+          .single();
+        
+        if (error || !data) {
+          return null;
+        }
+        
+        const sentence = data.fill_in_blank_sentence;
+        return sentence && sentence.trim() ? sentence : null;
+      } else {
+        const { data, error } = await this.supabaseService.client
+          .from('nlapp_words')
+          .select('fill_in_blank_sentence_fr')
+          .eq('id', wordId)
+          .single();
+        
+        if (error || !data) {
+          return null;
+        }
+        
+        const sentence = data.fill_in_blank_sentence_fr;
+        return sentence && sentence.trim() ? sentence : null;
       }
-      
-      // Retourner la phrase si elle existe et n'est pas vide
-      return data?.fill_in_blank_sentence && data.fill_in_blank_sentence.trim() 
-        ? data.fill_in_blank_sentence 
-        : null;
     } catch (error) {
       console.error('Error fetching stored sentence:', error);
       return null;
@@ -216,11 +243,19 @@ export class DeepSeekService {
   /**
    * Enregistre la phrase générée dans la DB pour réutilisation future
    */
-  private async saveSentenceToDatabase(wordId: string, sentence: string): Promise<void> {
+  private async saveSentenceToDatabase(
+    wordId: string, 
+    sentence: string,
+    direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french'
+  ): Promise<void> {
     try {
+      const updateData = direction === 'dutch_to_french'
+        ? { fill_in_blank_sentence: sentence }
+        : { fill_in_blank_sentence_fr: sentence };
+      
       const { error } = await this.supabaseService.client
         .from('nlapp_words')
-        .update({ fill_in_blank_sentence: sentence })
+        .update(updateData)
         .eq('id', wordId);
       
       if (error) {

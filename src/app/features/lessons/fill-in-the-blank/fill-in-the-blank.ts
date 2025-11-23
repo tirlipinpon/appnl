@@ -27,6 +27,7 @@ export class FillInTheBlank implements OnInit {
   currentIndex = 0;
   currentSentence: FillInTheBlankSentence | null = null;
   userInput: string = '';
+  letterInputs: string[] = [];
   showResult = false;
   isCorrect = false;
   score = { correct: 0, total: 0 };
@@ -50,28 +51,25 @@ export class FillInTheBlank implements OnInit {
           const sentence = await this.deepSeekService.getOrGenerateFillInTheBlankSentence(
             word.id,
             word.dutch_text,
+            'dutch_to_french',
             []
           );
           this.sentences.push(sentence);
         } else {
           // Phrase en français avec mot français manquant
-          // Pour l'instant, on génère une phrase simple en français
-          // Note: On pourrait créer une méthode séparée pour générer des phrases françaises
           const sentence = await this.deepSeekService.getOrGenerateFillInTheBlankSentence(
             word.id,
             word.french_text,
+            'french_to_dutch',
             []
           );
-          // Modifier la phrase pour qu'elle soit en français (pour l'instant, on utilise la même logique)
-          this.sentences.push({
-            sentence: sentence.sentence.replace(word.dutch_text, word.french_text),
-            missingWord: word.french_text
-          });
+          this.sentences.push(sentence);
         }
       }
       
       if (this.sentences.length > 0) {
         this.currentSentence = this.sentences[0];
+        this.initializeLetterInputs();
       }
     } catch (error) {
       console.error('Error loading sentences:', error);
@@ -81,15 +79,15 @@ export class FillInTheBlank implements OnInit {
   }
 
   async checkAnswer() {
-    if (this.showResult || !this.userInput.trim()) return;
+    if (this.showResult) return;
+    
+    const userAnswer = this.letterInputs.join('').trim();
+    if (!userAnswer) return;
     
     const currentWord = this.words[this.currentIndex];
-    // Comparaison insensible à la casse selon la direction
-    const correctAnswer = this.direction === 'dutch_to_french' 
-      ? currentWord.dutch_text 
-      : currentWord.french_text;
+    const correctAnswer = this.getCorrectAnswer();
     
-    this.isCorrect = this.userInput.trim().toLowerCase() === correctAnswer.toLowerCase();
+    this.isCorrect = userAnswer.toLowerCase() === correctAnswer.toLowerCase();
     this.showResult = true;
     this.score.total++;
     
@@ -105,7 +103,7 @@ export class FillInTheBlank implements OnInit {
         currentWord.id,
         'fill_in_blank',
         this.direction,
-        this.userInput.trim(),
+        userAnswer,
         correctAnswer,
         this.isCorrect
       );
@@ -119,6 +117,7 @@ export class FillInTheBlank implements OnInit {
       this.userInput = '';
       this.showResult = false;
       this.isCorrect = false;
+      this.initializeLetterInputs();
     } else {
       this.completed.emit(this.score);
     }
@@ -139,6 +138,112 @@ export class FillInTheBlank implements OnInit {
       sentence += ' _____';
     }
     return sentence;
+  }
+
+  getCorrectAnswer(): string {
+    const currentWord = this.words[this.currentIndex];
+    if (!currentWord) return '';
+    return this.direction === 'dutch_to_french' 
+      ? currentWord.dutch_text 
+      : currentWord.french_text;
+  }
+
+  initializeLetterInputs(): void {
+    const correctAnswer = this.getCorrectAnswer();
+    this.letterInputs = new Array(correctAnswer.length).fill('');
+  }
+
+  getLetterStatus(index: number): 'correct' | 'incorrect' | 'empty' {
+    if (this.showResult) {
+      const correctAnswer = this.getCorrectAnswer();
+      const userLetter = this.letterInputs[index]?.toLowerCase() || '';
+      const correctLetter = correctAnswer[index]?.toLowerCase() || '';
+      
+      if (!userLetter) return 'empty';
+      return userLetter === correctLetter ? 'correct' : 'incorrect';
+    }
+    
+    // En temps réel pendant la saisie
+    const correctAnswer = this.getCorrectAnswer();
+    const userLetter = this.letterInputs[index]?.toLowerCase() || '';
+    const correctLetter = correctAnswer[index]?.toLowerCase() || '';
+    
+    if (!userLetter) return 'empty';
+    return userLetter === correctLetter ? 'correct' : 'incorrect';
+  }
+
+  getCorrectLettersCount(): number {
+    const correctAnswer = this.getCorrectAnswer();
+    let count = 0;
+    for (let i = 0; i < correctAnswer.length; i++) {
+      const userLetter = this.letterInputs[i]?.toLowerCase() || '';
+      const correctLetter = correctAnswer[i]?.toLowerCase() || '';
+      if (userLetter === correctLetter) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  onLetterInput(index: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let value = input.value;
+    
+    // Ne garder que la dernière lettre si plusieurs caractères sont entrés
+    if (value.length > 1) {
+      value = value.slice(-1);
+      this.letterInputs[index] = value;
+      input.value = value;
+    } else {
+      this.letterInputs[index] = value;
+    }
+    
+    // Passer automatiquement à l'input suivant si une lettre est saisie
+    if (value && index < this.letterInputs.length - 1) {
+      const nextInput = document.querySelector(`input[data-letter-index="${index + 1}"]`) as HTMLInputElement;
+      if (nextInput) {
+        nextInput.focus();
+      }
+    }
+    
+    // Vérifier si tous les inputs sont remplis pour activer le bouton vérifier
+    this.userInput = this.letterInputs.join('');
+  }
+
+  onKeyDown(index: number, event: KeyboardEvent): void {
+    const input = event.target as HTMLInputElement;
+    
+    // Gérer Backspace
+    if (event.key === 'Backspace' && !input.value && index > 0) {
+      const prevInput = document.querySelector(`input[data-letter-index="${index - 1}"]`) as HTMLInputElement;
+      if (prevInput) {
+        prevInput.focus();
+        prevInput.select();
+      }
+    }
+    
+    // Gérer les flèches
+    if (event.key === 'ArrowLeft' && index > 0) {
+      event.preventDefault();
+      const prevInput = document.querySelector(`input[data-letter-index="${index - 1}"]`) as HTMLInputElement;
+      if (prevInput) {
+        prevInput.focus();
+      }
+    }
+    
+    if (event.key === 'ArrowRight' && index < this.letterInputs.length - 1) {
+      event.preventDefault();
+      const nextInput = document.querySelector(`input[data-letter-index="${index + 1}"]`) as HTMLInputElement;
+      if (nextInput) {
+        nextInput.focus();
+      }
+    }
+    
+    // Gérer Enter pour vérifier
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.checkAnswer();
+    }
   }
 }
 

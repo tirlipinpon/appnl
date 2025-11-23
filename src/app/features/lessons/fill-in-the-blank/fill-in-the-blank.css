@@ -67,41 +67,126 @@
   border: 2px dashed #667eea;
 }
 
+.help-hint {
+  margin-top: 16px;
+  padding: 12px 20px;
+  background: #e3f2fd;
+  border-radius: 8px;
+  border-left: 4px solid #2196f3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-label {
+  font-size: 14px;
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.help-word {
+  font-size: 18px;
+  color: #1565c0;
+  font-weight: 600;
+  font-style: italic;
+}
+
 .input-section {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 16px;
   margin-bottom: 24px;
   align-items: center;
 }
 
-.answer-input {
-  flex: 1;
-  padding: 16px 20px;
-  font-size: 18px;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  transition: all 0.2s;
+.letter-counter {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
 }
 
-.answer-input:focus {
+.letter-input-container {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+}
+
+.letter-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.letter-input {
+  width: 48px;
+  height: 48px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.letter-input:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.answer-input:disabled {
+.letter-input:disabled {
   background: #f8f9fa;
   cursor: not-allowed;
 }
 
-.answer-input.correct {
+.letter-input.correct {
   border-color: #28a745;
   background: #d4edda;
+  color: #155724;
 }
 
-.answer-input.incorrect {
+.letter-input.incorrect {
   border-color: #dc3545;
   background: #f8d7da;
+  color: #721c24;
+}
+
+.letter-bar {
+  width: 48px;
+  height: 4px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.letter-bar.correct {
+  background: #28a745;
+}
+
+.letter-bar.incorrect {
+  background: #dc3545;
+}
+
+@media (max-width: 600px) {
+  .letter-input {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  
+  .letter-bar {
+    width: 40px;
+  }
+  
+  .letter-input-container {
+    gap: 6px;
+  }
 }
 
 .btn-check {

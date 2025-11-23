@@ -78,3 +78,4 @@ export class FlashcardView {
       this.audioService.speak(this.word.french_text, 'fr-FR');
     }
   }
+}

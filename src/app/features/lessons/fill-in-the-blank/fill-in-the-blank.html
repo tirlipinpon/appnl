@@ -10,24 +10,45 @@
     <div class="question-section">
       <h3 class="question-label">Complétez la phrase en écrivant le mot manquant</h3>
       <div class="sentence-text">{{ getSentenceWithBlank() }}</div>
+      <div *ngIf="direction === 'french_to_dutch'" class="help-hint">
+        <span class="help-label">Aide :</span>
+        <span class="help-word">{{ getCurrentWord()?.dutch_text }}</span>
+      </div>
     </div>
 
     <div class="input-section">
-      <input
-        type="text"
-        class="answer-input"
-        [class.correct]="showResult && isCorrect"
-        [class.incorrect]="showResult && !isCorrect"
-        [(ngModel)]="userInput"
-        placeholder="Tapez le mot manquant..."
-        [disabled]="showResult"
-        (keyup.enter)="checkAnswer()"
-        autofocus
-      />
+      <div class="letter-counter" *ngIf="letterInputs.length > 0">
+        Lettres correctes : {{ getCorrectLettersCount() }} / {{ getCorrectAnswer().length }}
+      </div>
+      <div class="letter-input-container" *ngIf="letterInputs.length > 0">
+        <div 
+          *ngFor="let letter of letterInputs; let i = index" 
+          class="letter-wrapper"
+        >
+          <input
+            type="text"
+            class="letter-input"
+            [class.correct]="getLetterStatus(i) === 'correct'"
+            [class.incorrect]="getLetterStatus(i) === 'incorrect'"
+            [data-letter-index]="i"
+            [value]="letterInputs[i]"
+            [disabled]="showResult"
+            maxlength="1"
+            (input)="onLetterInput(i, $event)"
+            (keydown)="onKeyDown(i, $event)"
+            [autofocus]="i === 0"
+          />
+          <div 
+            class="letter-bar"
+            [class.correct]="getLetterStatus(i) === 'correct'"
+            [class.incorrect]="getLetterStatus(i) === 'incorrect'"
+          ></div>
+        </div>
+      </div>
       <button 
         class="btn-check" 
         (click)="checkAnswer()"
-        [disabled]="showResult || !userInput.trim()"
+        [disabled]="showResult || letterInputs.length === 0 || letterInputs.join('').trim().length === 0"
       >
         Vérifier
       </button>
@@ -36,7 +57,7 @@
     <div *ngIf="showResult" class="result-section">
       <div class="result-message" [class.correct]="isCorrect" [class.incorrect]="!isCorrect">
         <span *ngIf="isCorrect">✓ Correct !</span>
-        <span *ngIf="!isCorrect">✗ Incorrect. La bonne réponse est : {{ getCurrentWord()?.dutch_text }}</span>
+        <span *ngIf="!isCorrect">✗ Incorrect. La bonne réponse est : {{ direction === 'dutch_to_french' ? getCurrentWord()?.dutch_text : getCurrentWord()?.french_text }}</span>
       </div>
       
       <div class="score">
