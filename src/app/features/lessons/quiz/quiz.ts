@@ -20,6 +20,7 @@ export class Quiz implements OnInit {
   @Input() words: Word[] = [];
   @Input() direction: QuizDirection = 'french_to_dutch';
   @Output() completed = new EventEmitter<{ correct: number; total: number }>();
+  @Output() reverseRequested = new EventEmitter<void>();
 
   currentIndex = 0;
   currentWord: Word | null = null;

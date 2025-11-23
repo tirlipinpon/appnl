@@ -41,13 +41,20 @@
       >
         Question suivante →
       </button>
-      <button 
-        class="btn-primary" 
-        (click)="completed.emit(score)"
-        *ngIf="currentIndex === words.length - 1"
-      >
-        Terminer le quiz
-      </button>
+      <div *ngIf="currentIndex === words.length - 1" class="completion-actions">
+        <button 
+          class="btn-primary" 
+          (click)="completed.emit(score)"
+        >
+          Terminer le quiz
+        </button>
+        <button 
+          class="btn-secondary" 
+          (click)="reverseRequested.emit()"
+        >
+          🔄 Refaire en {{ direction === 'french_to_dutch' ? 'néerlandais → français' : 'français → néerlandais' }}
+        </button>
+      </div>
     </div>
   </div>
 </div>

@@ -13,9 +13,11 @@
         [word]="words[currentFlashcardIndex]"
         [currentIndex]="currentFlashcardIndex"
         [totalWords]="words.length"
+        [direction]="flashcardDirection"
         (next)="onFlashcardNext()"
         (previous)="onFlashcardPrevious()"
         (finish)="onFlashcardsFinish()"
+        (reverseRequested)="onFlashcardReverseRequested()"
       ></app-flashcard-view>
     </div>
 
@@ -24,8 +26,9 @@
       <h2>Quiz à choix multiples</h2>
       <app-quiz
         [words]="words"
-        [direction]="'french_to_dutch'"
+        [direction]="quizDirection"
         (completed)="onQuizCompleted($event)"
+        (reverseRequested)="onQuizReverseRequested()"
       ></app-quiz>
     </div>
 
@@ -34,8 +37,9 @@
       <h2>Pratique d'écriture</h2>
       <app-typing-practice
         [words]="words"
-        [direction]="'dutch_to_french'"
+        [direction]="typingDirection"
         (completed)="onTypingCompleted($event)"
+        (reverseRequested)="onTypingReverseRequested()"
       ></app-typing-practice>
     </div>
 
@@ -44,7 +48,9 @@
       <h2>Phrases à trous</h2>
       <app-fill-in-the-blank
         [words]="words"
+        [direction]="fillInBlankDirection"
         (completed)="onFillInBlankCompleted($event)"
+        (reverseRequested)="onFillInBlankReverseRequested()"
       ></app-fill-in-the-blank>
     </div>
 

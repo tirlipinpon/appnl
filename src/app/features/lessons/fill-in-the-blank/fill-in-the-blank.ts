@@ -20,7 +20,9 @@ export class FillInTheBlank implements OnInit {
   private supabaseService = inject(SupabaseService);
 
   @Input() words: Word[] = [];
+  @Input() direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
   @Output() completed = new EventEmitter<{ correct: number; total: number }>();
+  @Output() reverseRequested = new EventEmitter<void>();
 
   currentIndex = 0;
   currentSentence: FillInTheBlankSentence | null = null;
@@ -42,16 +44,30 @@ export class FillInTheBlank implements OnInit {
       this.sentences = [];
       
       for (const word of this.words) {
-        // Récupérer ou générer la phrase (avec vérification DB et enregistrement automatique)
-        // Si une phrase existe déjà dans la DB, elle sera utilisée
-        // Sinon, DeepSeek génère une nouvelle phrase et l'enregistre
-        const sentence = await this.deepSeekService.getOrGenerateFillInTheBlankSentence(
-          word.id,
-          word.dutch_text,
-          [] // Pas besoin de passer existingSentences car on réutilise la phrase de la DB
-        );
-        
-        this.sentences.push(sentence);
+        // Selon la direction, générer une phrase dans la langue appropriée
+        if (this.direction === 'dutch_to_french') {
+          // Phrase en néerlandais avec mot néerlandais manquant
+          const sentence = await this.deepSeekService.getOrGenerateFillInTheBlankSentence(
+            word.id,
+            word.dutch_text,
+            []
+          );
+          this.sentences.push(sentence);
+        } else {
+          // Phrase en français avec mot français manquant
+          // Pour l'instant, on génère une phrase simple en français
+          // Note: On pourrait créer une méthode séparée pour générer des phrases françaises
+          const sentence = await this.deepSeekService.getOrGenerateFillInTheBlankSentence(
+            word.id,
+            word.french_text,
+            []
+          );
+          // Modifier la phrase pour qu'elle soit en français (pour l'instant, on utilise la même logique)
+          this.sentences.push({
+            sentence: sentence.sentence.replace(word.dutch_text, word.french_text),
+            missingWord: word.french_text
+          });
+        }
       }
       
       if (this.sentences.length > 0) {
@@ -68,8 +84,12 @@ export class FillInTheBlank implements OnInit {
     if (this.showResult || !this.userInput.trim()) return;
     
     const currentWord = this.words[this.currentIndex];
-    // Comparaison insensible à la casse
-    this.isCorrect = this.userInput.trim().toLowerCase() === currentWord.dutch_text.toLowerCase();
+    // Comparaison insensible à la casse selon la direction
+    const correctAnswer = this.direction === 'dutch_to_french' 
+      ? currentWord.dutch_text 
+      : currentWord.french_text;
+    
+    this.isCorrect = this.userInput.trim().toLowerCase() === correctAnswer.toLowerCase();
     this.showResult = true;
     this.score.total++;
     
@@ -84,9 +104,9 @@ export class FillInTheBlank implements OnInit {
         user.id,
         currentWord.id,
         'fill_in_blank',
-        'dutch_to_french', // Direction pour phrases à trous (on teste le néerlandais)
+        this.direction,
         this.userInput.trim(),
-        currentWord.dutch_text,
+        correctAnswer,
         this.isCorrect
       );
     }

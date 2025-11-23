@@ -34,6 +34,12 @@ export class LessonDetail implements OnInit {
   typingScore: { correct: number; total: number } | null = null;
   fillInBlankScore: { correct: number; total: number } | null = null;
   isLoading = true;
+  
+  // Directions pour chaque jeu
+  flashcardDirection: 'french_to_dutch' | 'dutch_to_french' = 'french_to_dutch';
+  quizDirection: 'french_to_dutch' | 'dutch_to_french' = 'french_to_dutch';
+  typingDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
+  fillInBlankDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
 
   async ngOnInit() {
     const lessonId = this.route.snapshot.paramMap.get('id');
@@ -138,5 +144,58 @@ export class LessonDetail implements OnInit {
     this.quizScore = null;
     this.typingScore = null;
     this.fillInBlankScore = null;
+    // Réinitialiser les directions
+    this.flashcardDirection = 'french_to_dutch';
+    this.quizDirection = 'french_to_dutch';
+    this.typingDirection = 'dutch_to_french';
+    this.fillInBlankDirection = 'dutch_to_french';
+  }
+
+  onFlashcardReverseRequested() {
+    // Inverser la direction et relancer les flashcards
+    this.flashcardDirection = this.flashcardDirection === 'french_to_dutch' ? 'dutch_to_french' : 'french_to_dutch';
+    this.currentFlashcardIndex = 0;
+    // Forcer la recréation du composant en changeant temporairement l'étape
+    const currentStep = this.currentStep;
+    this.currentStep = 'quiz';
+    setTimeout(() => {
+      this.currentStep = currentStep;
+    }, 0);
+  }
+
+  onQuizReverseRequested() {
+    // Inverser la direction et relancer le quiz
+    this.quizDirection = this.quizDirection === 'french_to_dutch' ? 'dutch_to_french' : 'french_to_dutch';
+    this.quizScore = null;
+    // Forcer la recréation du composant en changeant temporairement l'étape
+    const currentStep = this.currentStep;
+    this.currentStep = 'flashcards';
+    setTimeout(() => {
+      this.currentStep = currentStep;
+    }, 0);
+  }
+
+  onTypingReverseRequested() {
+    // Inverser la direction et relancer l'exercice de frappe
+    this.typingDirection = this.typingDirection === 'french_to_dutch' ? 'dutch_to_french' : 'french_to_dutch';
+    this.typingScore = null;
+    // Forcer la recréation du composant en changeant temporairement l'étape
+    const currentStep = this.currentStep;
+    this.currentStep = 'quiz';
+    setTimeout(() => {
+      this.currentStep = currentStep;
+    }, 0);
+  }
+
+  onFillInBlankReverseRequested() {
+    // Inverser la direction et relancer les phrases à trous
+    this.fillInBlankDirection = this.fillInBlankDirection === 'french_to_dutch' ? 'dutch_to_french' : 'french_to_dutch';
+    this.fillInBlankScore = null;
+    // Forcer la recréation du composant en changeant temporairement l'étape
+    const currentStep = this.currentStep;
+    this.currentStep = 'typing';
+    setTimeout(() => {
+      this.currentStep = currentStep;
+    }, 0);
   }
 }

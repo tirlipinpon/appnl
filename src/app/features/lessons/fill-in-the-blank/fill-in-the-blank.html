@@ -50,13 +50,20 @@
       >
         Question suivante →
       </button>
-      <button 
-        class="btn-primary" 
-        (click)="completed.emit(score)"
-        *ngIf="currentIndex === words.length - 1"
-      >
-        Terminer l'exercice
-      </button>
+      <div *ngIf="currentIndex === words.length - 1" class="completion-actions">
+        <button 
+          class="btn-primary" 
+          (click)="completed.emit(score)"
+        >
+          Terminer l'exercice
+        </button>
+        <button 
+          class="btn-secondary" 
+          (click)="reverseRequested.emit()"
+        >
+          🔄 Refaire en {{ direction === 'dutch_to_french' ? 'français → néerlandais' : 'néerlandais → français' }}
+        </button>
+      </div>
     </div>
   </div>
 </div>
