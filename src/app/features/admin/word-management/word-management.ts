@@ -114,4 +114,26 @@ export class WordManagement implements OnInit {
     const lesson = this.lessons.find(l => l.id === lessonId);
     return lesson ? lesson.title : 'Leçon inconnue';
   }
+
+  getWordsByLesson(): { lesson: Lesson; words: Word[] }[] {
+    const grouped: { [key: string]: Word[] } = {};
+    
+    // Grouper les mots par leçon
+    this.words.forEach(word => {
+      const lessonId = word.lesson_id || 'unknown';
+      if (!grouped[lessonId]) {
+        grouped[lessonId] = [];
+      }
+      grouped[lessonId].push(word);
+    });
+
+    // Convertir en tableau et trier par titre de leçon
+    return this.lessons
+      .map(lesson => ({
+        lesson,
+        words: grouped[lesson.id] || []
+      }))
+      .filter(group => group.words.length > 0)
+      .sort((a, b) => a.lesson.title.localeCompare(b.lesson.title));
+  }
 }

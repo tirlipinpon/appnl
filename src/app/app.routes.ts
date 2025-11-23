@@ -40,6 +40,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'admin/lessons',
+    loadComponent: () => import('./features/admin/lesson-management/lesson-management').then(m => m.LessonManagement),
+    canActivate: [authGuard]
+  },
+  {
     path: '**',
     redirectTo: '/dashboard'
   }

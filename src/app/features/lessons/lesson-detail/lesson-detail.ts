@@ -9,12 +9,13 @@ import { Word } from '../../../core/models/word.model';
 import { FlashcardView } from '../flashcard-view/flashcard-view';
 import { Quiz } from '../quiz/quiz';
 import { TypingPractice } from '../typing-practice/typing-practice';
+import { FillInTheBlank } from '../fill-in-the-blank/fill-in-the-blank';
 
-type LessonStep = 'flashcards' | 'quiz' | 'typing' | 'completed';
+type LessonStep = 'flashcards' | 'quiz' | 'typing' | 'fillInBlank' | 'completed';
 
 @Component({
   selector: 'app-lesson-detail',
-  imports: [CommonModule, RouterLink, FlashcardView, Quiz, TypingPractice],
+  imports: [CommonModule, RouterLink, FlashcardView, Quiz, TypingPractice, FillInTheBlank],
   templateUrl: './lesson-detail.html',
   styleUrl: './lesson-detail.css',
 })
@@ -31,6 +32,7 @@ export class LessonDetail implements OnInit {
   currentFlashcardIndex = 0;
   quizScore: { correct: number; total: number } | null = null;
   typingScore: { correct: number; total: number } | null = null;
+  fillInBlankScore: { correct: number; total: number } | null = null;
   isLoading = true;
 
   async ngOnInit() {
@@ -79,12 +81,41 @@ export class LessonDetail implements OnInit {
     this.currentStep = 'typing';
   }
 
-  async onTypingCompleted(score: { correct: number; total: number }) {
+  onTypingCompleted(score: { correct: number; total: number }) {
     this.typingScore = score;
+    // Passer au test phrase à trous seulement si activé, sinon terminer
+    if (this.lesson?.enable_fill_in_blank !== false) {
+      this.currentStep = 'fillInBlank';
+    } else {
+      // Si le test phrase à trous est désactivé, calculer directement le score final
+      this.calculateFinalScore();
+    }
+  }
+
+  private async calculateFinalScore() {
+    const totalScore = (this.quizScore?.correct || 0) + (this.typingScore?.correct || 0);
+    const totalQuestions = (this.quizScore?.total || 0) + (this.typingScore?.total || 0);
+    const successRate = totalQuestions > 0 ? (totalScore / totalQuestions) * 100 : 0;
+
+    if (successRate >= 70) {
+      const user = this.authService.getCurrentUser();
+      if (user && this.lesson) {
+        await this.progressService.completeLesson(user.id, this.lesson.id);
+      }
+      this.currentStep = 'completed';
+    } else {
+      alert(`Score insuffisant (${Math.round(successRate)}%). Veuillez réessayer.`);
+      this.currentStep = 'flashcards';
+      this.currentFlashcardIndex = 0;
+    }
+  }
+
+  async onFillInBlankCompleted(score: { correct: number; total: number }) {
+    this.fillInBlankScore = score;
     
-    // Marquer la leçon comme complétée si le quiz est réussi (par exemple, > 70%)
-    const totalScore = (this.quizScore?.correct || 0) + score.correct;
-    const totalQuestions = (this.quizScore?.total || 0) + score.total;
+    // Marquer la leçon comme complétée si le score global est réussi (par exemple, > 70%)
+    const totalScore = (this.quizScore?.correct || 0) + (this.typingScore?.correct || 0) + score.correct;
+    const totalQuestions = (this.quizScore?.total || 0) + (this.typingScore?.total || 0) + score.total;
     const successRate = totalQuestions > 0 ? (totalScore / totalQuestions) * 100 : 0;
 
     if (successRate >= 70) {
@@ -106,5 +137,6 @@ export class LessonDetail implements OnInit {
     this.currentFlashcardIndex = 0;
     this.quizScore = null;
     this.typingScore = null;
+    this.fillInBlankScore = null;
   }
 }

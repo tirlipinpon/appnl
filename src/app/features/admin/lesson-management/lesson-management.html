@@ -1,0 +1,112 @@
+<div class="lesson-management-container">
+  <div class="header">
+    <h1>Gestion des leçons</h1>
+    <div class="header-actions">
+      <button class="btn-secondary" routerLink="/admin/words">Gérer les mots</button>
+      <button class="btn-secondary" routerLink="/dashboard">Retour au tableau de bord</button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">Chargement...</div>
+
+  <div *ngIf="!isLoading">
+    <!-- Formulaire d'ajout/édition -->
+    <div class="form-section">
+      <h2>{{ editingLesson ? 'Modifier la leçon' : 'Ajouter une nouvelle leçon' }}</h2>
+      
+      <form [formGroup]="lessonForm" (ngSubmit)="onSubmit()" class="lesson-form">
+        <div class="form-group">
+          <label for="title">Titre</label>
+          <input
+            id="title"
+            type="text"
+            formControlName="title"
+            placeholder="Leçon 1: Salutations"
+            [class.error]="lessonForm.get('title')?.invalid && lessonForm.get('title')?.touched"
+          />
+          <span class="error-message" *ngIf="lessonForm.get('title')?.hasError('required') && lessonForm.get('title')?.touched">
+            Le titre est requis
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description (optionnel)</label>
+          <textarea
+            id="description"
+            formControlName="description"
+            placeholder="Description de la leçon..."
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="order_index">Ordre</label>
+          <input
+            id="order_index"
+            type="number"
+            formControlName="order_index"
+            min="0"
+            [class.error]="lessonForm.get('order_index')?.invalid && lessonForm.get('order_index')?.touched"
+          />
+          <span class="error-message" *ngIf="lessonForm.get('order_index')?.hasError('required') && lessonForm.get('order_index')?.touched">
+            L'ordre est requis
+          </span>
+          <span class="error-message" *ngIf="lessonForm.get('order_index')?.hasError('min') && lessonForm.get('order_index')?.touched">
+            L'ordre doit être supérieur ou égal à 0
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              formControlName="enable_fill_in_blank"
+            />
+            <span>Activer le test "Phrases à trous" (avec DeepSeek)</span>
+          </label>
+          <p class="help-text">Si activé, les élèves devront compléter des phrases générées par IA après les autres tests.</p>
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+        <div class="success-message" *ngIf="successMessage">{{ successMessage }}</div>
+
+        <div class="form-actions">
+          <button type="submit" [disabled]="lessonForm.invalid" class="btn-primary">
+            {{ editingLesson ? 'Mettre à jour' : 'Ajouter' }}
+          </button>
+          <button type="button" class="btn-secondary" (click)="cancelEdit()" *ngIf="editingLesson">
+            Annuler
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Liste des leçons -->
+    <div class="lessons-section">
+      <h2>Liste des leçons ({{ lessons.length }})</h2>
+      
+      <div class="lessons-list">
+        <div *ngFor="let lesson of lessons" class="lesson-item">
+          <div class="lesson-info">
+            <h3>{{ lesson.title }}</h3>
+            <p *ngIf="lesson.description">{{ lesson.description }}</p>
+            <div class="lesson-meta">
+              <span class="lesson-order">Ordre: {{ lesson.order_index }}</span>
+              <span class="lesson-feature" *ngIf="lesson.enable_fill_in_blank !== false">
+                ✓ Phrases à trous activé
+              </span>
+              <span class="lesson-feature disabled" *ngIf="lesson.enable_fill_in_blank === false">
+                ✗ Phrases à trous désactivé
+              </span>
+            </div>
+          </div>
+          <div class="lesson-actions">
+            <button class="btn-edit" (click)="editLesson(lesson)">Modifier</button>
+            <button class="btn-delete" (click)="deleteLesson(lesson)">Supprimer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

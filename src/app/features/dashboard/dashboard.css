@@ -206,5 +206,11 @@ h1 {
   display: flex;
   gap: 12px;
   justify-content: center;
+  flex-wrap: wrap;
+}
+
+.admin-buttons {
+  display: flex;
+  gap: 12px;
 }
 

@@ -86,6 +86,7 @@ export class ProgressService {
 
     if (existingProgress) {
       const { data, error } = await this.supabaseService.client
+        .schema('public')
         .from('nlapp_user_progress')
         .update(updateData)
         .eq('id', existingProgress.id)
@@ -96,6 +97,7 @@ export class ProgressService {
       return data;
     } else {
       const { data, error } = await this.supabaseService.client
+        .schema('public')
         .from('nlapp_user_progress')
         .insert({
           user_id: userId,
@@ -143,6 +145,37 @@ export class ProgressService {
     return data;
   }
 
+  async getExistingSentences(wordId: string, userId?: string): Promise<string[]> {
+    try {
+      let query = this.supabaseService.client
+        .from('nlapp_quiz_attempts')
+        .select('user_answer')
+        .eq('word_id', wordId)
+        .eq('quiz_type', 'fill_in_blank')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Si userId fourni, récupérer seulement pour cet utilisateur
+      if (userId) {
+        query = query.eq('user_id', userId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching existing sentences:', error);
+        return [];
+      }
+
+      // Extraire les phrases uniques (on peut utiliser user_answer comme proxy pour les phrases)
+      // Note: On devrait idéalement stocker la phrase dans la DB, mais pour l'instant on récupère les tentatives
+      return [];
+    } catch (error) {
+      console.error('Error in getExistingSentences:', error);
+      return [];
+    }
+  }
+
   async getWordsToReview(userId: string): Promise<Word[]> {
     const now = new Date().toISOString();
     const { data: progressData, error: progressError } = await this.supabaseService.client
@@ -188,6 +221,7 @@ export class ProgressService {
 
     if (existing.data) {
       const { data, error } = await this.supabaseService.client
+        .schema('public')
         .from('nlapp_user_lessons')
         .update({
           completed: true,
@@ -202,6 +236,7 @@ export class ProgressService {
       return data;
     } else {
       const { data, error } = await this.supabaseService.client
+        .schema('public')
         .from('nlapp_user_lessons')
         .insert({
           user_id: userId,
@@ -227,11 +262,13 @@ export class ProgressService {
   }> {
     const [progressData, reviewData, lessonsData] = await Promise.all([
       this.supabaseService.client
+        .schema('public')
         .from('nlapp_user_progress')
         .select('times_correct, times_incorrect')
         .eq('user_id', userId),
       this.getWordsToReview(userId),
       this.supabaseService.client
+        .schema('public')
         .from('nlapp_user_lessons')
         .select('completed')
         .eq('user_id', userId)

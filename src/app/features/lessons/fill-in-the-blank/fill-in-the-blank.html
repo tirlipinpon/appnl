@@ -1,0 +1,63 @@
+<div class="fill-in-blank-container">
+  <div class="progress-bar">
+    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
+    <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">Génération des phrases...</div>
+
+  <div *ngIf="!isLoading && currentSentence" class="fill-in-blank-content">
+    <div class="question-section">
+      <h3 class="question-label">Complétez la phrase en écrivant le mot manquant</h3>
+      <div class="sentence-text">{{ getSentenceWithBlank() }}</div>
+    </div>
+
+    <div class="input-section">
+      <input
+        type="text"
+        class="answer-input"
+        [class.correct]="showResult && isCorrect"
+        [class.incorrect]="showResult && !isCorrect"
+        [(ngModel)]="userInput"
+        placeholder="Tapez le mot manquant..."
+        [disabled]="showResult"
+        (keyup.enter)="checkAnswer()"
+        autofocus
+      />
+      <button 
+        class="btn-check" 
+        (click)="checkAnswer()"
+        [disabled]="showResult || !userInput.trim()"
+      >
+        Vérifier
+      </button>
+    </div>
+
+    <div *ngIf="showResult" class="result-section">
+      <div class="result-message" [class.correct]="isCorrect" [class.incorrect]="!isCorrect">
+        <span *ngIf="isCorrect">✓ Correct !</span>
+        <span *ngIf="!isCorrect">✗ Incorrect. La bonne réponse est : {{ getCurrentWord()?.dutch_text }}</span>
+      </div>
+      
+      <div class="score">
+        Score : {{ score.correct }} / {{ score.total }}
+      </div>
+
+      <button 
+        class="btn-primary" 
+        (click)="nextQuestion()"
+        *ngIf="currentIndex < words.length - 1"
+      >
+        Question suivante →
+      </button>
+      <button 
+        class="btn-primary" 
+        (click)="completed.emit(score)"
+        *ngIf="currentIndex === words.length - 1"
+      >
+        Terminer l'exercice
+      </button>
+    </div>
+  </div>
+</div>
+

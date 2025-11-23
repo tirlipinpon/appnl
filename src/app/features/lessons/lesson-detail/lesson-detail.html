@@ -39,7 +39,16 @@
       ></app-typing-practice>
     </div>
 
-    <!-- Étape 4: Leçon complétée -->
+    <!-- Étape 4: Phrases à trous -->
+    <div *ngIf="currentStep === 'fillInBlank'">
+      <h2>Phrases à trous</h2>
+      <app-fill-in-the-blank
+        [words]="words"
+        (completed)="onFillInBlankCompleted($event)"
+      ></app-fill-in-the-blank>
+    </div>
+
+    <!-- Étape 5: Leçon complétée -->
     <div *ngIf="currentStep === 'completed'" class="completion-screen">
       <div class="completion-content">
         <h2>🎉 Félicitations !</h2>
@@ -53,6 +62,10 @@
           <div class="score-card">
             <h3>Écriture</h3>
             <p class="score-value">{{ typingScore?.correct }} / {{ typingScore?.total }}</p>
+          </div>
+          <div class="score-card">
+            <h3>Phrases à trous</h3>
+            <p class="score-value">{{ fillInBlankScore?.correct }} / {{ fillInBlankScore?.total }}</p>
           </div>
         </div>
 

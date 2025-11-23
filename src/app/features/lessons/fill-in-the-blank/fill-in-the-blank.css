@@ -1,4 +1,4 @@
-.quiz-container {
+.fill-in-blank-container {
   max-width: 700px;
   margin: 0 auto;
   padding: 24px;
@@ -30,7 +30,14 @@
   font-size: 14px;
 }
 
-.quiz-content {
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 18px;
+}
+
+.fill-in-blank-content {
   background: white;
   border-radius: 16px;
   padding: 32px;
@@ -49,55 +56,73 @@
   font-weight: 500;
 }
 
-.question-text {
-  font-size: 32px;
-  font-weight: 700;
+.sentence-text {
+  font-size: 28px;
+  font-weight: 600;
   color: #333;
+  line-height: 1.6;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #667eea;
 }
 
-.choices-section {
-  display: grid;
-  grid-template-columns: 1fr;
+.input-section {
+  display: flex;
   gap: 12px;
   margin-bottom: 24px;
+  align-items: center;
 }
 
-.choice-btn {
-  padding: 16px 24px;
-  background: #f8f9fa;
+.answer-input {
+  flex: 1;
+  padding: 16px 20px;
+  font-size: 18px;
   border: 2px solid #e0e0e0;
   border-radius: 12px;
-  font-size: 18px;
-  cursor: pointer;
   transition: all 0.2s;
-  text-align: left;
-  color: #333;
-  font-weight: 500;
 }
 
-.choice-btn:hover:not(:disabled) {
+.answer-input:focus {
+  outline: none;
   border-color: #667eea;
-  background: #f0f4ff;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.choice-btn.selected {
-  border-color: #667eea;
-  background: #f0f4ff;
+.answer-input:disabled {
+  background: #f8f9fa;
+  cursor: not-allowed;
 }
 
-.choice-btn.correct {
-  background: #d4edda;
+.answer-input.correct {
   border-color: #28a745;
-  color: #155724;
+  background: #d4edda;
 }
 
-.choice-btn.incorrect {
-  background: #f8d7da;
+.answer-input.incorrect {
   border-color: #dc3545;
-  color: #721c24;
+  background: #f8d7da;
 }
 
-.choice-btn:disabled {
+.btn-check {
+  padding: 16px 32px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-check:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.btn-check:disabled {
+  background: #ccc;
   cursor: not-allowed;
 }
 
