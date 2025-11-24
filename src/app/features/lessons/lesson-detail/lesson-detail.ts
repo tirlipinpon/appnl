@@ -61,7 +61,7 @@ export class LessonDetail implements OnInit {
   // Directions pour chaque jeu
   flashcardDirection: 'french_to_dutch' | 'dutch_to_french' = 'french_to_dutch';
   quizDirection: 'french_to_dutch' | 'dutch_to_french' = 'french_to_dutch';
-  frenchWritingDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
+  frenchWritingDirection: 'french_to_dutch' | 'dutch_to_french' = 'french_to_dutch';
   fillInBlankDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
   reorderSentenceDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
 

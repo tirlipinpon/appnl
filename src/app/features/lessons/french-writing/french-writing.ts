@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, inject, ViewChildren, QueryList, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject, ViewChildren, QueryList, ElementRef, AfterViewInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Word } from '../../../core/models/word.model';
 import { ProgressService } from '../../../core/services/progress.service';
@@ -12,13 +12,13 @@ import { AudioService } from '../../../core/services/audio.service';
   templateUrl: './french-writing.html',
   styleUrl: './french-writing.css',
 })
-export class FrenchWriting implements OnInit, AfterViewInit {
+export class FrenchWriting implements OnInit, AfterViewInit, OnChanges {
   private progressService = inject(ProgressService);
   private authService = inject(AuthService);
   audioService = inject(AudioService);
 
   @Input() words: Word[] = [];
-  @Input() direction: QuizDirection = 'dutch_to_french';
+  @Input() direction: QuizDirection = 'french_to_dutch';
   @Output() completed = new EventEmitter<{ correct: number; total: number }>();
   @Output() reverseRequested = new EventEmitter<void>();
   @Output() nextGameRequested = new EventEmitter<void>();
@@ -33,6 +33,7 @@ export class FrenchWriting implements OnInit, AfterViewInit {
   isCorrect = false;
   score = { correct: 0, total: 0 };
   expectedLength = 0;
+  isCompleted = false;
 
   /**
    * Normalise une lettre en supprimant les accents pour la comparaison
@@ -47,6 +48,31 @@ export class FrenchWriting implements OnInit, AfterViewInit {
 
   ngAfterViewInit() {
     this.focusFirstInput();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    // Réinitialiser le composant quand la direction change
+    if (changes['direction'] && !changes['direction'].firstChange) {
+      this.currentIndex = 0;
+      this.score = { correct: 0, total: 0 };
+      this.showResult = false;
+      this.isCorrect = false;
+      this.isCompleted = false;
+      if (this.words.length > 0) {
+        this.loadQuestion();
+      }
+    }
+    // Réinitialiser aussi si les mots changent
+    if (changes['words'] && !changes['words'].firstChange) {
+      this.currentIndex = 0;
+      this.score = { correct: 0, total: 0 };
+      this.showResult = false;
+      this.isCorrect = false;
+      this.isCompleted = false;
+      if (this.words.length > 0) {
+        this.loadQuestion();
+      }
+    }
   }
 
   focusFirstInput(): void {
@@ -66,16 +92,25 @@ export class FrenchWriting implements OnInit, AfterViewInit {
 
   loadQuestion() {
     if (this.currentIndex >= this.words.length) {
+      this.isCompleted = true;
       this.completed.emit(this.score);
       return;
     }
+    
+    this.isCompleted = false;
 
     this.currentWord = this.words[this.currentIndex];
     this.showResult = false;
     this.isCorrect = false;
 
-    // Toujours afficher le mot néerlandais et demander d'écrire le français
-    this.correctAnswer = this.currentWord.french_text;
+    // Utiliser la direction pour déterminer quel texte afficher et quel texte demander
+    if (this.direction === 'french_to_dutch') {
+      // Afficher le français et demander d'écrire le néerlandais
+      this.correctAnswer = this.currentWord.dutch_text;
+    } else {
+      // Afficher le néerlandais et demander d'écrire le français
+      this.correctAnswer = this.currentWord.french_text;
+    }
     this.expectedLength = this.correctAnswer.length;
     this.initializeLetterInputs();
     this.focusFirstInput();
@@ -273,13 +308,25 @@ export class FrenchWriting implements OnInit, AfterViewInit {
 
   getQuestionText(): string {
     if (!this.currentWord) return '';
-    // Toujours afficher le mot néerlandais
-    return this.currentWord.dutch_text;
+    // Afficher le texte selon la direction
+    if (this.direction === 'french_to_dutch') {
+      return this.currentWord.french_text;
+    } else {
+      return this.currentWord.dutch_text;
+    }
   }
 
   playAudio(): void {
-    if (this.currentWord?.dutch_text) {
-      this.audioService.speak(this.currentWord.dutch_text, 'nl-NL');
+    if (!this.currentWord) return;
+    // Lire le texte selon la direction
+    if (this.direction === 'french_to_dutch') {
+      if (this.currentWord.french_text) {
+        this.audioService.speak(this.currentWord.french_text, 'fr-FR');
+      }
+    } else {
+      if (this.currentWord.dutch_text) {
+        this.audioService.speak(this.currentWord.dutch_text, 'nl-NL');
+      }
     }
   }
 }

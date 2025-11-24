@@ -33,7 +33,7 @@
         <button 
           class="audio-btn" 
           (click)="playAudio()" 
-          *ngIf="audioService.isSupported() && currentWord?.dutch_text"
+          *ngIf="audioService.isSupported() && currentWord && ((direction === 'french_to_dutch' && currentWord.french_text) || (direction === 'dutch_to_french' && currentWord.dutch_text))"
         >
           🔊
         </button>
@@ -56,15 +56,16 @@
       </button>
     </div>
 
-    <div *ngIf="showResult" class="result-section">
+    <div *ngIf="showResult || isCompleted" class="result-section">
       <div class="score">
         Score : {{ score.correct }} / {{ score.total }}
       </div>
 
-      <div *ngIf="currentIndex === words.length - 1" class="completion-actions">
+      <div *ngIf="isCompleted || (currentIndex === words.length - 1 && showResult)" class="completion-actions">
         <button 
           class="btn-primary" 
           (click)="completed.emit(score)"
+          *ngIf="!isCompleted"
         >
           Terminer l'exercice
         </button>
