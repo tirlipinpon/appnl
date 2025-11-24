@@ -1,0 +1,120 @@
+<div class="reorder-sentence-container">
+  <div *ngIf="isLoading" class="loading">Chargement de la première phrase...</div>
+  
+  <div *ngIf="isLoadingNext" class="loading-next">Chargement de la phrase suivante...</div>
+
+  <div *ngIf="!isLoading && currentSentence" class="reorder-sentence-content">
+    <div class="question-section">
+      <div class="sentence-text-wrapper">
+        <div class="sentence-text">Remettez les mots dans le bon ordre</div>
+        <button 
+          class="audio-btn" 
+          (click)="playAudio()" 
+          *ngIf="audioService.isSupported() && currentSentence"
+        >
+          🔊
+        </button>
+      </div>
+    </div>
+
+    <div class="drag-drop-section">
+      <!-- Tableau de départ (mots mélangés) -->
+      <div class="source-container">
+        <h3 class="container-title">Mots disponibles</h3>
+        <div 
+          class="words-grid source-words"
+          (dragover)="onDragOverSource($event)"
+        >
+          <div
+            *ngFor="let word of sourceWords; let i = index"
+            class="word-item source-word"
+            draggable="true"
+            (dragstart)="onDragStartFromSource($event, word, i)"
+            (dragend)="onDragEnd($event)"
+            (drop)="onDropSource($event, i)"
+          >
+            {{ word.text }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Tableau final (ordre à reconstruire) -->
+      <div class="target-container">
+        <h3 class="container-title">Reconstruisez la phrase</h3>
+        <div class="words-grid target-words">
+          <div
+            *ngFor="let word of targetWords; let i = index"
+            class="word-slot"
+            [class.empty]="word === null"
+            [class.correct]="getWordStatus(i) === 'correct'"
+            [class.incorrect]="getWordStatus(i) === 'incorrect'"
+            (dragover)="onDragOverTarget($event, i)"
+            (drop)="onDropTarget($event, i)"
+          >
+            <div
+              *ngIf="word !== null"
+              class="word-item target-word"
+              draggable="true"
+              [class.correct]="getWordStatus(i) === 'correct'"
+              [class.incorrect]="getWordStatus(i) === 'incorrect'"
+              (dragstart)="onDragStartFromTarget($event, word, i)"
+              (dragend)="onDragEnd($event)"
+            >
+              {{ word.text }}
+            </div>
+            <div *ngIf="word === null" class="empty-slot">
+              <span class="drop-hint">Déposez ici</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="navigation-buttons">
+      <button class="btn-nav" (click)="previousQuestion()" [disabled]="currentIndex === 0 || isLoadingNext">
+        ← Précédent
+      </button>
+      <button 
+        class="btn-primary" 
+        (click)="nextQuestion()" 
+        [disabled]="isLoadingNext || !isAllCorrect() || currentIndex >= words.length - 1"
+      >
+        <span *ngIf="!isLoadingNext">Suivant →</span>
+        <span *ngIf="isLoadingNext">Chargement...</span>
+      </button>
+    </div>
+
+    <div class="action-buttons">
+      <button 
+        class="btn-skip-game" 
+        (click)="nextGameRequested.emit()"
+      >
+        ⏭️ Passer au jeu suivant
+      </button>
+    </div>
+
+    <div *ngIf="currentIndex === words.length - 1 && isAllCorrect()" class="completion-section">
+      <div class="score">
+        Score : {{ score.correct + 1 }} / {{ score.total + 1 }}
+      </div>
+      <button 
+        class="btn-primary" 
+        (click)="finishExercise()"
+      >
+        Terminer l'exercice
+      </button>
+      <button 
+        class="btn-secondary" 
+        (click)="reverseRequested.emit()"
+      >
+        🔄 Refaire en {{ direction === 'dutch_to_french' ? 'français → néerlandais' : 'néerlandais → français' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="progress-bar" *ngIf="!isLoading && currentSentence">
+    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
+    <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
+  </div>
+</div>
+

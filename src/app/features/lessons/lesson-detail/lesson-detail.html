@@ -140,7 +140,18 @@
       ></app-fill-in-the-blank>
     </div>
 
-    <!-- Étape 5: Leçon complétée -->
+    <!-- Étape 5: Réordonnancement de phrases -->
+    <div *ngIf="currentStep === 'reorderSentence'">
+      <app-reorder-sentence
+        [words]="reorderSentenceWords"
+        [direction]="reorderSentenceDirection"
+        (completed)="onReorderSentenceCompleted($event)"
+        (reverseRequested)="onReorderSentenceReverseRequested()"
+        (nextGameRequested)="onReorderSentenceNextGameRequested()"
+      ></app-reorder-sentence>
+    </div>
+
+    <!-- Étape 6: Leçon complétée -->
     <div *ngIf="currentStep === 'completed'" class="completion-screen">
       <div class="completion-content">
         <h2>🎉 Félicitations !</h2>
@@ -158,6 +169,10 @@
           <div class="score-card">
             <h3>Phrases à trous</h3>
             <p class="score-value">{{ fillInBlankScore?.correct }} / {{ fillInBlankScore?.total }}</p>
+          </div>
+          <div class="score-card">
+            <h3>Réordonnancement</h3>
+            <p class="score-value">{{ reorderSentenceScore?.correct }} / {{ reorderSentenceScore?.total }}</p>
           </div>
         </div>
 
