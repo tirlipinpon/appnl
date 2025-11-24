@@ -4,41 +4,28 @@
       <div class="question-text">{{ getQuestionText() }}</div>
     </div>
 
-    <div class="input-section">
-      <div class="letter-input-container" *ngIf="letterInputs.length > 0">
-        <div 
-          *ngFor="let letter of letterInputs; let i = index" 
-          class="letter-wrapper"
-        >
-          <input
-            #letterInput
-            type="text"
-            class="letter-input"
-            [class.correct]="getLetterStatus(i) === 'correct'"
-            [class.incorrect]="getLetterStatus(i) === 'incorrect'"
-            [attr.data-letter-index]="i"
-            [value]="letterInputs[i]"
-            [disabled]="showResult || !canEditInput(i)"
-            maxlength="1"
-            (input)="onLetterInput(i, $event)"
-            (keydown)="onKeyDown(i, $event)"
-            (focus)="onInputFocus(i, $event)"
-            [autofocus]="i === 0"
-          />
-          <div 
-            class="letter-bar"
-            [class.correct]="getLetterStatus(i) === 'correct'"
-            [class.incorrect]="getLetterStatus(i) === 'incorrect'"
-          ></div>
-        </div>
-        <button 
-          class="audio-btn" 
-          (click)="playAudio()" 
-          *ngIf="audioService.isSupported() && currentWord?.dutch_text"
-        >
-          🔊
-        </button>
-      </div>
+    <div class="choices-section">
+      <button
+        *ngFor="let choice of choices"
+        class="choice-btn"
+        [class.selected]="selectedAnswer === choice"
+        [class.correct]="showResult && choice === correctAnswer"
+        [class.incorrect]="showResult && selectedAnswer === choice && !isCorrect"
+        [disabled]="showResult"
+        (click)="selectAnswer(choice)"
+      >
+        {{ choice }}
+      </button>
+    </div>
+
+    <div class="audio-section">
+      <button 
+        class="audio-btn" 
+        (click)="playAudio()" 
+        *ngIf="audioService.isSupported() && currentWord?.dutch_text"
+      >
+        🔊
+      </button>
     </div>
 
     <div class="navigation-buttons">
@@ -78,7 +65,7 @@
       </div>
     </div>
 
-    <div *ngIf="!showResult && !isWordCompleteAndCorrect()" class="action-section">
+    <div *ngIf="!showResult" class="action-section">
       <div class="action-buttons">
         <button class="btn-skip-game" (click)="nextGameRequested.emit()">
           ⏭️ Passer au jeu suivant
