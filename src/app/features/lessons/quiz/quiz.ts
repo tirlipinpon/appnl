@@ -5,6 +5,7 @@ import { WordService } from '../../../core/services/word.service';
 import { ProgressService } from '../../../core/services/progress.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { QuizDirection } from '../../../core/models/progress.model';
+import { AudioService } from '../../../core/services/audio.service';
 
 @Component({
   selector: 'app-quiz',
@@ -16,6 +17,7 @@ export class Quiz implements OnInit {
   private wordService = inject(WordService);
   private progressService = inject(ProgressService);
   private authService = inject(AuthService);
+  audioService = inject(AudioService);
 
   @Input() words: Word[] = [];
   @Input() direction: QuizDirection = 'french_to_dutch';
@@ -164,5 +166,12 @@ export class Quiz implements OnInit {
     return this.direction === 'french_to_dutch' 
       ? 'Traduisez en néerlandais :' 
       : 'Traduisez en français :';
+  }
+
+  playAudio(): void {
+    // Toujours lire le néerlandais (la langue à apprendre)
+    if (this.currentWord?.dutch_text) {
+      this.audioService.speak(this.currentWord.dutch_text, 'nl-NL');
+    }
   }
 }

@@ -1,7 +1,16 @@
 <div class="typing-practice-container">
   <div *ngIf="currentWord" class="typing-content">
     <div class="question-section">
-      <div class="question-text">{{ getQuestionText() }}</div>
+      <div class="question-text-wrapper">
+        <div class="question-text">{{ getQuestionText() }}</div>
+        <button 
+          class="audio-btn" 
+          (click)="playAudio()" 
+          *ngIf="audioService.isSupported() && currentWord?.dutch_text"
+        >
+          🔊
+        </button>
+      </div>
     </div>
 
     <div class="choices-section">
@@ -15,16 +24,6 @@
         (click)="selectAnswer(choice)"
       >
         {{ choice }}
-      </button>
-    </div>
-
-    <div class="audio-section">
-      <button 
-        class="audio-btn" 
-        (click)="playAudio()" 
-        *ngIf="audioService.isSupported() && currentWord?.dutch_text"
-      >
-        🔊
       </button>
     </div>
 

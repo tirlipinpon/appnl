@@ -5,7 +5,16 @@
 
   <div *ngIf="!isLoading && currentSentence" class="fill-in-blank-content">
     <div class="question-section">
-      <div class="sentence-text">{{ getSentenceWithBlank() }}</div>
+      <div class="sentence-text-wrapper">
+        <div class="sentence-text">{{ getSentenceWithBlank() }}</div>
+        <button 
+          class="audio-btn" 
+          (click)="playAudio()" 
+          *ngIf="audioService.isSupported() && getCurrentWord()?.dutch_text"
+        >
+          🔊
+        </button>
+      </div>
       <div *ngIf="direction === 'french_to_dutch'" class="help-hint">
         <span class="help-label">Aide :</span>
         <span class="help-word">{{ getCurrentWord()?.dutch_text }}</span>
@@ -39,13 +48,6 @@
             [class.incorrect]="getLetterStatus(i) === 'incorrect'"
           ></div>
         </div>
-        <button 
-          class="audio-btn" 
-          (click)="playAudio()" 
-          *ngIf="audioService.isSupported() && getCurrentWord()?.dutch_text"
-        >
-          🔊
-        </button>
       </div>
     </div>
 

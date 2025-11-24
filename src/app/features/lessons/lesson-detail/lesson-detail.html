@@ -118,18 +118,7 @@
       ></app-quiz>
     </div>
 
-    <!-- Étape 3: Pratique d'écriture -->
-    <div *ngIf="currentStep === 'typing'">
-      <app-typing-practice
-        [words]="typingWords"
-        [direction]="typingDirection"
-        (completed)="onTypingCompleted($event)"
-        (reverseRequested)="onTypingReverseRequested()"
-        (nextGameRequested)="onTypingNextGameRequested()"
-      ></app-typing-practice>
-    </div>
-
-    <!-- Étape 4: Écriture en français -->
+    <!-- Étape 3: Écriture en français -->
     <div *ngIf="currentStep === 'frenchWriting'">
       <app-french-writing
         [words]="frenchWritingWords"
@@ -140,7 +129,7 @@
       ></app-french-writing>
     </div>
 
-    <!-- Étape 5: Phrases à trous -->
+    <!-- Étape 4: Phrases à trous -->
     <div *ngIf="currentStep === 'fillInBlank'">
       <app-fill-in-the-blank
         [words]="fillInBlankWords"
@@ -161,10 +150,6 @@
           <div class="score-card">
             <h3>Quiz</h3>
             <p class="score-value">{{ quizScore?.correct }} / {{ quizScore?.total }}</p>
-          </div>
-          <div class="score-card">
-            <h3>Écriture</h3>
-            <p class="score-value">{{ typingScore?.correct }} / {{ typingScore?.total }}</p>
           </div>
           <div class="score-card">
             <h3>Écriture français</h3>

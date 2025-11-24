@@ -1,7 +1,16 @@
 <div class="quiz-container">
   <div *ngIf="currentWord" class="quiz-content">
     <div class="question-section">
-      <div class="question-text">{{ getQuestionText() }}</div>
+      <div class="question-text-wrapper">
+        <div class="question-text">{{ getQuestionText() }}</div>
+        <button 
+          class="audio-btn" 
+          (click)="playAudio()" 
+          *ngIf="audioService.isSupported() && currentWord?.dutch_text"
+        >
+          🔊
+        </button>
+      </div>
     </div>
 
     <div class="choices-section">
