@@ -1,0 +1,94 @@
+<div class="french-writing-container">
+  <div *ngIf="currentWord" class="french-writing-content">
+    <div class="question-section">
+      <div class="question-text">{{ getQuestionText() }}</div>
+    </div>
+
+    <div class="input-section">
+      <div class="letter-input-container" *ngIf="letterInputs.length > 0">
+        <div 
+          *ngFor="let letter of letterInputs; let i = index" 
+          class="letter-wrapper"
+        >
+          <input
+            #letterInput
+            type="text"
+            class="letter-input"
+            [class.correct]="getLetterStatus(i) === 'correct'"
+            [class.incorrect]="getLetterStatus(i) === 'incorrect'"
+            [attr.data-letter-index]="i"
+            [value]="letterInputs[i]"
+            [disabled]="showResult || !canEditInput(i)"
+            maxlength="1"
+            (input)="onLetterInput(i, $event)"
+            (keydown)="onKeyDown(i, $event)"
+            [autofocus]="i === 0"
+          />
+          <div 
+            class="letter-bar"
+            [class.correct]="getLetterStatus(i) === 'correct'"
+            [class.incorrect]="getLetterStatus(i) === 'incorrect'"
+          ></div>
+        </div>
+        <button 
+          class="audio-btn" 
+          (click)="playAudio()" 
+          *ngIf="audioService.isSupported() && currentWord?.dutch_text"
+        >
+          🔊
+        </button>
+      </div>
+    </div>
+
+    <div class="navigation-buttons">
+      <button class="btn-nav" (click)="previousQuestion()" [disabled]="currentIndex === 0">
+        ← Précédent
+      </button>
+      <button class="btn-primary" (click)="nextQuestion()" *ngIf="currentIndex < words.length - 1 && !showResult">
+        Suivant →
+      </button>
+      <button 
+        class="btn-primary" 
+        (click)="nextQuestion()"
+        *ngIf="currentIndex < words.length - 1 && showResult"
+      >
+        Question suivante →
+      </button>
+    </div>
+
+    <div *ngIf="showResult" class="result-section">
+      <div class="score">
+        Score : {{ score.correct }} / {{ score.total }}
+      </div>
+
+      <div *ngIf="currentIndex === words.length - 1" class="completion-actions">
+        <button 
+          class="btn-primary" 
+          (click)="completed.emit(score)"
+        >
+          Terminer l'exercice
+        </button>
+        <button 
+          class="btn-secondary" 
+          (click)="reverseRequested.emit()"
+        >
+          🔄 Refaire en {{ direction === 'french_to_dutch' ? 'néerlandais → français' : 'français → néerlandais' }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="!showResult && !isWordCompleteAndCorrect()" class="action-section">
+      <div class="action-buttons">
+        <button class="btn-skip-game" (click)="nextGameRequested.emit()">
+          ⏭️ Passer au jeu suivant
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="progress-bar" *ngIf="currentWord">
+    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
+    <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
+  </div>
+</div>
+

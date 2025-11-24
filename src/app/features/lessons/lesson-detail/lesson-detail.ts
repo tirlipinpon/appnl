@@ -13,13 +13,14 @@ import { Word } from '../../../core/models/word.model';
 import { FlashcardView } from '../flashcard-view/flashcard-view';
 import { Quiz } from '../quiz/quiz';
 import { TypingPractice } from '../typing-practice/typing-practice';
+import { FrenchWriting } from '../french-writing/french-writing';
 import { FillInTheBlank } from '../fill-in-the-blank/fill-in-the-blank';
 
-type LessonStep = 'flashcards' | 'quiz' | 'typing' | 'fillInBlank' | 'completed';
+type LessonStep = 'flashcards' | 'quiz' | 'typing' | 'frenchWriting' | 'fillInBlank' | 'completed';
 
 @Component({
   selector: 'app-lesson-detail',
-  imports: [CommonModule, FormsModule, RouterLink, FlashcardView, Quiz, TypingPractice, FillInTheBlank],
+  imports: [CommonModule, FormsModule, RouterLink, FlashcardView, Quiz, TypingPractice, FrenchWriting, FillInTheBlank],
   templateUrl: './lesson-detail.html',
   styleUrl: './lesson-detail.css',
 })
@@ -39,11 +40,13 @@ export class LessonDetail implements OnInit {
   flashcardWords: Word[] = [];
   quizWords: Word[] = [];
   typingWords: Word[] = [];
+  frenchWritingWords: Word[] = [];
   fillInBlankWords: Word[] = [];
   currentStep: LessonStep = 'flashcards';
   currentFlashcardIndex = 0;
   quizScore: { correct: number; total: number } | null = null;
   typingScore: { correct: number; total: number } | null = null;
+  frenchWritingScore: { correct: number; total: number } | null = null;
   fillInBlankScore: { correct: number; total: number } | null = null;
   isLoading = true;
   
@@ -59,6 +62,7 @@ export class LessonDetail implements OnInit {
   flashcardDirection: 'french_to_dutch' | 'dutch_to_french' = 'french_to_dutch';
   quizDirection: 'french_to_dutch' | 'dutch_to_french' = 'french_to_dutch';
   typingDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
+  frenchWritingDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
   fillInBlankDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
 
   /**
@@ -156,6 +160,7 @@ export class LessonDetail implements OnInit {
       this.flashcardWords = this.shuffleArray(wordsToUse);
       this.quizWords = this.shuffleArray(wordsToUse);
       this.typingWords = this.shuffleArray(wordsToUse);
+      this.frenchWritingWords = this.shuffleArray(wordsToUse);
       this.fillInBlankWords = this.shuffleArray(wordsToUse);
     } catch (error) {
       console.error('Error loading lesson:', error);
@@ -199,6 +204,15 @@ export class LessonDetail implements OnInit {
 
   onTypingCompleted(score: { correct: number; total: number }) {
     this.typingScore = score;
+    this.currentStep = 'frenchWriting';
+  }
+
+  onTypingNextGameRequested() {
+    this.currentStep = 'frenchWriting';
+  }
+
+  onFrenchWritingCompleted(score: { correct: number; total: number }) {
+    this.frenchWritingScore = score;
     // Passer au test phrase à trous seulement si activé, sinon terminer
     if (this.lesson?.enable_fill_in_blank !== false) {
       this.currentStep = 'fillInBlank';
@@ -208,7 +222,7 @@ export class LessonDetail implements OnInit {
     }
   }
 
-  onTypingNextGameRequested() {
+  onFrenchWritingNextGameRequested() {
     // Passer directement au fill-in-blank ou terminer
     if (this.lesson?.enable_fill_in_blank !== false) {
       this.currentStep = 'fillInBlank';
@@ -219,8 +233,8 @@ export class LessonDetail implements OnInit {
   }
 
   private async calculateFinalScore() {
-    const totalScore = (this.quizScore?.correct || 0) + (this.typingScore?.correct || 0);
-    const totalQuestions = (this.quizScore?.total || 0) + (this.typingScore?.total || 0);
+    const totalScore = (this.quizScore?.correct || 0) + (this.typingScore?.correct || 0) + (this.frenchWritingScore?.correct || 0);
+    const totalQuestions = (this.quizScore?.total || 0) + (this.typingScore?.total || 0) + (this.frenchWritingScore?.total || 0);
     const successRate = totalQuestions > 0 ? (totalScore / totalQuestions) * 100 : 0;
 
     console.log(`Calculating final score: ${totalScore}/${totalQuestions} = ${Math.round(successRate)}%`);
@@ -251,8 +265,8 @@ export class LessonDetail implements OnInit {
     this.fillInBlankScore = score;
     
     // Marquer la leçon comme complétée si le score global est réussi (par exemple, > 70%)
-    const totalScore = (this.quizScore?.correct || 0) + (this.typingScore?.correct || 0) + score.correct;
-    const totalQuestions = (this.quizScore?.total || 0) + (this.typingScore?.total || 0) + score.total;
+    const totalScore = (this.quizScore?.correct || 0) + (this.typingScore?.correct || 0) + (this.frenchWritingScore?.correct || 0) + score.correct;
+    const totalQuestions = (this.quizScore?.total || 0) + (this.typingScore?.total || 0) + (this.frenchWritingScore?.total || 0) + score.total;
     const successRate = totalQuestions > 0 ? (totalScore / totalQuestions) * 100 : 0;
 
     console.log(`Fill-in-blank completed. Calculating final score: ${totalScore}/${totalQuestions} = ${Math.round(successRate)}%`);
@@ -285,6 +299,7 @@ export class LessonDetail implements OnInit {
     this.flashcardDirection = 'french_to_dutch';
     this.quizDirection = 'french_to_dutch';
     this.typingDirection = 'dutch_to_french';
+    this.frenchWritingDirection = 'dutch_to_french';
     this.fillInBlankDirection = 'dutch_to_french';
     
     // Recharger et filtrer les mots à réviser
@@ -338,6 +353,19 @@ export class LessonDetail implements OnInit {
     }, 0);
   }
 
+  onFrenchWritingReverseRequested() {
+    // Inverser la direction et remélanger les mots pour l'écriture en français
+    this.frenchWritingDirection = this.frenchWritingDirection === 'french_to_dutch' ? 'dutch_to_french' : 'french_to_dutch';
+    this.frenchWritingWords = this.shuffleArray(this.words);
+    this.frenchWritingScore = null;
+    // Forcer la recréation du composant en changeant temporairement l'étape
+    const currentStep = this.currentStep;
+    this.currentStep = 'typing';
+    setTimeout(() => {
+      this.currentStep = currentStep;
+    }, 0);
+  }
+
   onFillInBlankReverseRequested() {
     // Inverser la direction et remélanger les mots pour les phrases à trous
     this.fillInBlankDirection = this.fillInBlankDirection === 'french_to_dutch' ? 'dutch_to_french' : 'french_to_dutch';
@@ -345,7 +373,7 @@ export class LessonDetail implements OnInit {
     this.fillInBlankScore = null;
     // Forcer la recréation du composant en changeant temporairement l'étape
     const currentStep = this.currentStep;
-    this.currentStep = 'typing';
+    this.currentStep = 'frenchWriting';
     setTimeout(() => {
       this.currentStep = currentStep;
     }, 0);

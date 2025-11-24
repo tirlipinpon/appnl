@@ -1,4 +1,4 @@
-.quiz-container {
+.french-writing-container {
   max-width: 700px;
   margin: 0 auto;
   padding: 24px;
@@ -30,7 +30,7 @@
   font-size: 14px;
 }
 
-.quiz-content {
+.french-writing-content {
   background: white;
   border-radius: 16px;
   padding: 32px;
@@ -42,66 +42,137 @@
   text-align: center;
 }
 
-.question-label {
-  font-size: 16px;
-  color: #666;
-  margin-bottom: 16px;
-  font-weight: 500;
-}
-
 .question-text {
   font-size: 32px;
   font-weight: 700;
   color: #333;
 }
 
-.choices-section {
+.input-section {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex-direction: column;
+  gap: 16px;
   margin-bottom: 24px;
+  align-items: center;
+}
+
+.letter-input-container {
+  display: flex;
+  gap: 8px;
   justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  align-items: center;
 }
 
-.choice-btn {
-  padding: 6px 9px;
-  background: #f8f9fa;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  font-size: 18px;
-  cursor: pointer;
-  transition: all 0.2s;
+.letter-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.letter-input {
+  width: 48px;
+  height: 48px;
   text-align: center;
-  color: #333;
-  font-weight: 500;
-  white-space: nowrap;
-  width: auto;
-  min-width: fit-content;
+  font-size: 24px;
+  font-weight: 600;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.2s;
+  text-transform: uppercase;
 }
 
-.choice-btn:hover:not(:disabled) {
+.letter-input:focus {
+  outline: none;
   border-color: #667eea;
-  background: #f0f4ff;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.choice-btn.selected {
-  border-color: #667eea;
-  background: #f0f4ff;
+.letter-input:disabled {
+  background: #f8f9fa;
+  cursor: not-allowed;
 }
 
-.choice-btn.correct {
-  background: #d4edda;
+.letter-input.correct {
   border-color: #28a745;
+  background: #d4edda;
   color: #155724;
 }
 
-.choice-btn.incorrect {
-  background: #f8d7da;
+.letter-input.incorrect {
   border-color: #dc3545;
+  background: #f8d7da;
   color: #721c24;
 }
 
-.choice-btn:disabled {
+.letter-bar {
+  width: 48px;
+  height: 4px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.letter-bar.correct {
+  background: #28a745;
+}
+
+.letter-bar.incorrect {
+  background: #dc3545;
+}
+
+.audio-btn {
+  padding: 8px 12px;
+  background: #667eea;
+  color: white;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  margin-left: 8px;
+}
+
+.audio-btn:hover {
+  background: #5568d3;
+  border-color: #5568d3;
+}
+
+.navigation-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.btn-nav {
+  padding: 12px 24px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-nav:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.btn-nav:disabled {
+  background: #ccc;
   cursor: not-allowed;
 }
 
@@ -109,24 +180,6 @@
   text-align: center;
   padding-top: 24px;
   border-top: 2px solid #e0e0e0;
-}
-
-.result-message {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 16px;
-  padding: 16px;
-  border-radius: 8px;
-}
-
-.result-message.correct {
-  background: #d4edda;
-  color: #155724;
-}
-
-.result-message.incorrect {
-  background: #f8d7da;
-  color: #721c24;
 }
 
 .score {
@@ -189,22 +242,6 @@
   flex-wrap: wrap;
 }
 
-.btn-skip {
-  padding: 12px 24px;
-  background: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-skip:hover {
-  background: #5a6268;
-}
-
 .btn-skip-game {
   padding: 12px 24px;
   background: #ff9800;
@@ -221,32 +258,19 @@
   background: #f57c00;
 }
 
-.navigation-buttons {
-  display: flex;
-  gap: 12px;
-  width: 100%;
-  justify-content: center;
-  margin-bottom: 24px;
-}
-
-.btn-nav {
-  padding: 12px 24px;
-  background: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-nav:hover:not(:disabled) {
-  background: #5a6268;
-}
-
-.btn-nav:disabled {
-  background: #ccc;
-  cursor: not-allowed;
+@media (max-width: 600px) {
+  .letter-input {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  
+  .letter-bar {
+    width: 40px;
+  }
+  
+  .letter-input-container {
+    gap: 6px;
+  }
 }
 
