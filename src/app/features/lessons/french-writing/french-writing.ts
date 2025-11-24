@@ -34,6 +34,17 @@ export class FrenchWriting implements OnInit, AfterViewInit {
   score = { correct: 0, total: 0 };
   expectedLength = 0;
 
+  /**
+   * Normalise une lettre en supprimant les accents pour la comparaison
+   * Exemple: é -> e, à -> a, ç -> c
+   */
+  private normalizeLetter(letter: string): string {
+    if (!letter) return '';
+    return letter.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
   ngAfterViewInit() {
     this.focusFirstInput();
   }
@@ -82,7 +93,7 @@ export class FrenchWriting implements OnInit, AfterViewInit {
       value = value.slice(-1);
     }
     
-    const isCorrect = value.toLowerCase() === this.correctAnswer[index]?.toLowerCase();
+    const isCorrect = this.normalizeLetter(value) === this.normalizeLetter(this.correctAnswer[index] || '');
     const newLetterInputs = [...this.letterInputs];
     newLetterInputs[index] = value;
     this.letterInputs = newLetterInputs;
@@ -145,9 +156,9 @@ export class FrenchWriting implements OnInit, AfterViewInit {
     if (this.letterInputs.length !== this.correctAnswer.length) return false;
     
     for (let i = 0; i < this.correctAnswer.length; i++) {
-      const userLetter = this.letterInputs[i]?.toLowerCase() || '';
-      const correctLetter = this.correctAnswer[i]?.toLowerCase() || '';
-      if (!userLetter || userLetter !== correctLetter) {
+      const userLetter = this.letterInputs[i] || '';
+      const correctLetter = this.correctAnswer[i] || '';
+      if (!userLetter || this.normalizeLetter(userLetter) !== this.normalizeLetter(correctLetter)) {
         return false;
       }
     }
@@ -191,18 +202,18 @@ export class FrenchWriting implements OnInit, AfterViewInit {
   }
 
   getLetterStatus(index: number): 'correct' | 'incorrect' | 'empty' {
-    const userLetter = this.letterInputs[index]?.toLowerCase() || '';
-    const correctLetter = this.correctAnswer[index]?.toLowerCase() || '';
+    const userLetter = this.letterInputs[index] || '';
+    const correctLetter = this.correctAnswer[index] || '';
     
     if (!userLetter) return 'empty';
-    return userLetter === correctLetter ? 'correct' : 'incorrect';
+    return this.normalizeLetter(userLetter) === this.normalizeLetter(correctLetter) ? 'correct' : 'incorrect';
   }
 
   getFirstIncorrectIndex(): number {
     for (let i = 0; i < this.correctAnswer.length; i++) {
-      const userLetter = this.letterInputs[i]?.toLowerCase() || '';
-      const correctLetter = this.correctAnswer[i]?.toLowerCase() || '';
-      if (userLetter && userLetter !== correctLetter) {
+      const userLetter = this.letterInputs[i] || '';
+      const correctLetter = this.correctAnswer[i] || '';
+      if (userLetter && this.normalizeLetter(userLetter) !== this.normalizeLetter(correctLetter)) {
         return i;
       }
     }
@@ -211,9 +222,9 @@ export class FrenchWriting implements OnInit, AfterViewInit {
 
   canEditInput(index: number): boolean {
     for (let i = 0; i < index; i++) {
-      const userLetter = this.letterInputs[i]?.toLowerCase() || '';
-      const correctLetter = this.correctAnswer[i]?.toLowerCase() || '';
-      if (!userLetter || userLetter !== correctLetter) {
+      const userLetter = this.letterInputs[i] || '';
+      const correctLetter = this.correctAnswer[i] || '';
+      if (!userLetter || this.normalizeLetter(userLetter) !== this.normalizeLetter(correctLetter)) {
         return false;
       }
     }
@@ -226,7 +237,7 @@ export class FrenchWriting implements OnInit, AfterViewInit {
       return;
     }
 
-    this.isCorrect = userAnswer.toLowerCase() === this.correctAnswer.toLowerCase();
+    this.isCorrect = this.normalizeLetter(userAnswer) === this.normalizeLetter(this.correctAnswer);
     this.showResult = true;
     this.score.total++;
 

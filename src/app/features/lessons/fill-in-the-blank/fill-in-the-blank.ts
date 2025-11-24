@@ -41,6 +41,17 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
   sentences: FillInTheBlankSentence[] = [];
   sentencePromises: Map<number, Promise<FillInTheBlankSentence>> = new Map();
 
+  /**
+   * Normalise une lettre en supprimant les accents pour la comparaison
+   * Exemple: é -> e, à -> a, ç -> c
+   */
+  private normalizeLetter(letter: string): string {
+    if (!letter) return '';
+    return letter.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
   ngAfterViewInit() {
     // S'assurer que les inputs sont bien initialisés
     this.focusFirstInput();
@@ -186,7 +197,7 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
     const currentWord = this.words[this.currentIndex];
     const correctAnswer = this.getCorrectAnswer();
     
-    this.isCorrect = userAnswer.toLowerCase() === correctAnswer.toLowerCase();
+    this.isCorrect = this.normalizeLetter(userAnswer) === this.normalizeLetter(correctAnswer);
     this.showResult = true;
     this.score.total++;
     
@@ -334,29 +345,29 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
   getLetterStatus(index: number): 'correct' | 'incorrect' | 'empty' {
     if (this.showResult) {
       const correctAnswer = this.getCorrectAnswer();
-      const userLetter = this.letterInputs[index]?.toLowerCase() || '';
-      const correctLetter = correctAnswer[index]?.toLowerCase() || '';
+      const userLetter = this.letterInputs[index] || '';
+      const correctLetter = correctAnswer[index] || '';
       
       if (!userLetter) return 'empty';
-      return userLetter === correctLetter ? 'correct' : 'incorrect';
+      return this.normalizeLetter(userLetter) === this.normalizeLetter(correctLetter) ? 'correct' : 'incorrect';
     }
     
     // En temps réel pendant la saisie
     const correctAnswer = this.getCorrectAnswer();
-    const userLetter = this.letterInputs[index]?.toLowerCase() || '';
-    const correctLetter = correctAnswer[index]?.toLowerCase() || '';
+    const userLetter = this.letterInputs[index] || '';
+    const correctLetter = correctAnswer[index] || '';
     
     if (!userLetter) return 'empty';
-    return userLetter === correctLetter ? 'correct' : 'incorrect';
+    return this.normalizeLetter(userLetter) === this.normalizeLetter(correctLetter) ? 'correct' : 'incorrect';
   }
 
   getCorrectLettersCount(): number {
     const correctAnswer = this.getCorrectAnswer();
     let count = 0;
     for (let i = 0; i < correctAnswer.length; i++) {
-      const userLetter = this.letterInputs[i]?.toLowerCase() || '';
-      const correctLetter = correctAnswer[i]?.toLowerCase() || '';
-      if (userLetter === correctLetter) {
+      const userLetter = this.letterInputs[i] || '';
+      const correctLetter = correctAnswer[i] || '';
+      if (this.normalizeLetter(userLetter) === this.normalizeLetter(correctLetter)) {
         count++;
       }
     }
@@ -370,9 +381,9 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
   getFirstIncorrectIndex(): number {
     const correctAnswer = this.getCorrectAnswer();
     for (let i = 0; i < correctAnswer.length; i++) {
-      const userLetter = this.letterInputs[i]?.toLowerCase() || '';
-      const correctLetter = correctAnswer[i]?.toLowerCase() || '';
-      if (userLetter && userLetter !== correctLetter) {
+      const userLetter = this.letterInputs[i] || '';
+      const correctLetter = correctAnswer[i] || '';
+      if (userLetter && this.normalizeLetter(userLetter) !== this.normalizeLetter(correctLetter)) {
         return i;
       }
     }
@@ -387,9 +398,9 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
     const correctAnswer = this.getCorrectAnswer();
     // Vérifier que tous les inputs précédents sont corrects
     for (let i = 0; i < index; i++) {
-      const userLetter = this.letterInputs[i]?.toLowerCase() || '';
-      const correctLetter = correctAnswer[i]?.toLowerCase() || '';
-      if (!userLetter || userLetter !== correctLetter) {
+      const userLetter = this.letterInputs[i] || '';
+      const correctLetter = correctAnswer[i] || '';
+      if (!userLetter || this.normalizeLetter(userLetter) !== this.normalizeLetter(correctLetter)) {
         return false;
       }
     }
@@ -407,7 +418,7 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
     
     // Vérifier si la lettre est correcte AVANT de mettre à jour le tableau
     const correctAnswer = this.getCorrectAnswer();
-    const isCorrect = value.toLowerCase() === correctAnswer[index]?.toLowerCase();
+    const isCorrect = this.normalizeLetter(value) === this.normalizeLetter(correctAnswer[index] || '');
     
     // Mettre à jour uniquement cet index dans le tableau
     const newLetterInputs = [...this.letterInputs];
@@ -495,9 +506,9 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
     
     // Vérifier que tous les inputs sont remplis et corrects
     for (let i = 0; i < correctAnswer.length; i++) {
-      const userLetter = this.letterInputs[i]?.toLowerCase() || '';
-      const correctLetter = correctAnswer[i]?.toLowerCase() || '';
-      if (!userLetter || userLetter !== correctLetter) {
+      const userLetter = this.letterInputs[i] || '';
+      const correctLetter = correctAnswer[i] || '';
+      if (!userLetter || this.normalizeLetter(userLetter) !== this.normalizeLetter(correctLetter)) {
         return false;
       }
     }
