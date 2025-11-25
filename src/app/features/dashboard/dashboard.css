@@ -31,6 +31,20 @@ h1 {
   background: #5a6268;
 }
 
+.btn-admin {
+  padding: 10px 20px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-admin:hover {
+  background: #c82333;
+}
+
 .loading {
   text-align: center;
   padding: 40px;

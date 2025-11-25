@@ -1,7 +1,16 @@
 <div class="french-writing-container">
   <div *ngIf="currentWord" class="french-writing-content">
     <div class="question-section">
-      <div class="question-text">{{ getQuestionText() }}</div>
+      <div class="question-text-wrapper">
+        <div class="question-text">{{ getQuestionText() }}</div>
+        <button 
+          class="audio-btn" 
+          (click)="playAudio()" 
+          *ngIf="audioService.isSupported() && currentWord && ((direction === 'french_to_dutch' && currentWord.french_text) || (direction === 'dutch_to_french' && currentWord.dutch_text))"
+        >
+          🔊
+        </button>
+      </div>
     </div>
 
     <div class="input-section">
@@ -30,13 +39,6 @@
             [class.incorrect]="getLetterStatus(i) === 'incorrect'"
           ></div>
         </div>
-        <button 
-          class="audio-btn" 
-          (click)="playAudio()" 
-          *ngIf="audioService.isSupported() && currentWord && ((direction === 'french_to_dutch' && currentWord.french_text) || (direction === 'dutch_to_french' && currentWord.dutch_text))"
-        >
-          🔊
-        </button>
       </div>
     </div>
 

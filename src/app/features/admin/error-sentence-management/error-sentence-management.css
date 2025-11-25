@@ -1,0 +1,420 @@
+.error-sentence-management-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.header-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-email {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.email-label {
+  font-weight: 500;
+  color: #999;
+}
+
+.email-value {
+  font-weight: 600;
+  color: #667eea;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+h1 {
+  margin: 0;
+  color: #333;
+  font-size: 32px;
+}
+
+.btn-secondary {
+  padding: 10px 20px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.form-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  margin: 0 0 24px 0;
+  color: #333;
+  font-size: 24px;
+}
+
+h3 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.error-sentence-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+label {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+input,
+select,
+textarea {
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+input.error,
+select.error,
+textarea.error {
+  border-color: #e74c3c;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 12px;
+}
+
+.success-message {
+  color: #27ae60;
+  font-size: 14px;
+  padding: 12px;
+  background: #d4edda;
+  border-radius: 8px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  padding: 12px 24px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-generate {
+  padding: 12px 24px;
+  background: #9c27b0;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-generate:hover:not(:disabled) {
+  background: #7b1fa2;
+}
+
+.btn-generate:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.filters-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filters-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.btn-clear-filters {
+  padding: 12px 20px;
+  background: #ff9800;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  height: fit-content;
+}
+
+.btn-clear-filters:hover {
+  background: #f57c00;
+}
+
+.error-sentences-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.error-sentences-section h2 {
+  margin: 0 0 24px 0;
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+  padding-bottom: 16px;
+  border-bottom: 3px solid #667eea;
+}
+
+.no-results {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.error-sentence-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 2px solid #e0e0e0;
+  transition: all 0.2s;
+}
+
+.error-sentence-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.error-sentence-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.error-sentence-info {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.word-info {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.lesson-info {
+  color: #666;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.direction-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.direction-badge.dutch-to-french {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.error-type-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.error-sentence-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-edit {
+  padding: 6px 12px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-edit:hover {
+  background: #5568d3;
+}
+
+.btn-delete {
+  padding: 6px 12px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-delete:hover {
+  background: #c82333;
+}
+
+.error-sentence-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sentence-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.sentence-label {
+  font-weight: 600;
+  color: #666;
+  font-size: 13px;
+  min-width: 120px;
+}
+
+.sentence-text {
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.error-text {
+  color: #e74c3c;
+  font-weight: 500;
+}
+
+.correct-text {
+  color: #27ae60;
+  font-weight: 500;
+}
+
+.explanation-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.explanation-label {
+  font-weight: 600;
+  color: #666;
+  font-size: 13px;
+  min-width: 120px;
+}
+
+.explanation-text {
+  flex: 1;
+  color: #555;
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.5;
+}
+

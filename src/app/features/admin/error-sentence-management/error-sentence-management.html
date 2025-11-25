@@ -1,0 +1,227 @@
+<div class="error-sentence-management-container">
+  <div class="header">
+    <div class="header-title-section">
+      <h1>Gestion des phrases avec erreurs</h1>
+      <div class="user-email" *ngIf="authService.getCurrentUser()">
+        <span class="email-label">Utilisateur :</span>
+        <span class="email-value">{{ authService.getCurrentUser()?.email }}</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" routerLink="/admin/words">Gérer les mots</button>
+      <button class="btn-secondary" routerLink="/admin/lessons">Gérer les leçons</button>
+      <button class="btn-secondary" routerLink="/dashboard">Retour au tableau de bord</button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">Chargement...</div>
+
+  <div *ngIf="!isLoading">
+    <!-- Formulaire d'ajout/édition -->
+    <div class="form-section">
+      <h2>{{ editingErrorSentence ? 'Modifier la phrase avec erreur' : 'Ajouter une nouvelle phrase avec erreur' }}</h2>
+      
+      <form [formGroup]="errorSentenceForm" (ngSubmit)="onSubmit()" class="error-sentence-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="word_id">Mot *</label>
+            <select
+              id="word_id"
+              formControlName="word_id"
+              [class.error]="errorSentenceForm.get('word_id')?.invalid && errorSentenceForm.get('word_id')?.touched"
+            >
+              <option value="">Sélectionner un mot</option>
+              <option *ngFor="let word of words" [value]="word.id">
+                {{ word.french_text }} / {{ word.dutch_text }}
+              </option>
+            </select>
+            <span class="error-message" *ngIf="errorSentenceForm.get('word_id')?.hasError('required') && errorSentenceForm.get('word_id')?.touched">
+              Le mot est requis
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="lesson_id">Leçon (optionnel)</label>
+            <select
+              id="lesson_id"
+              formControlName="lesson_id"
+            >
+              <option value="">Aucune leçon spécifique</option>
+              <option *ngFor="let lesson of lessons" [value]="lesson.id">
+                {{ lesson.title }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="direction">Direction *</label>
+            <select
+              id="direction"
+              formControlName="direction"
+              [class.error]="errorSentenceForm.get('direction')?.invalid && errorSentenceForm.get('direction')?.touched"
+            >
+              <option value="dutch_to_french">Néerlandais → Français</option>
+              <option value="french_to_dutch">Français → Néerlandais</option>
+            </select>
+            <span class="error-message" *ngIf="errorSentenceForm.get('direction')?.hasError('required') && errorSentenceForm.get('direction')?.touched">
+              La direction est requise
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="error_type">Type d'erreur (optionnel)</label>
+            <select
+              id="error_type"
+              formControlName="error_type"
+            >
+              <option value="">Aucun type spécifique</option>
+              <option *ngFor="let type of errorTypes" [value]="type.value">
+                {{ type.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="sentence_with_error">Phrase avec erreur *</label>
+          <textarea
+            id="sentence_with_error"
+            formControlName="sentence_with_error"
+            rows="2"
+            placeholder="Ex: Ik ga naar de winkel morgen"
+            [class.error]="errorSentenceForm.get('sentence_with_error')?.invalid && errorSentenceForm.get('sentence_with_error')?.touched"
+          ></textarea>
+          <span class="error-message" *ngIf="errorSentenceForm.get('sentence_with_error')?.hasError('required') && errorSentenceForm.get('sentence_with_error')?.touched">
+            La phrase avec erreur est requise
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="sentence_correct">Phrase correcte *</label>
+          <textarea
+            id="sentence_correct"
+            formControlName="sentence_correct"
+            rows="2"
+            placeholder="Ex: Ik ga morgen naar de winkel"
+            [class.error]="errorSentenceForm.get('sentence_correct')?.invalid && errorSentenceForm.get('sentence_correct')?.touched"
+          ></textarea>
+          <span class="error-message" *ngIf="errorSentenceForm.get('sentence_correct')?.hasError('required') && errorSentenceForm.get('sentence_correct')?.touched">
+            La phrase correcte est requise
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="explanation">Explication (optionnel)</label>
+          <textarea
+            id="explanation"
+            formControlName="explanation"
+            rows="2"
+            placeholder="Ex: L'adverbe de temps doit être placé avant le complément de lieu"
+          ></textarea>
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+        <div class="success-message" *ngIf="successMessage">{{ successMessage }}</div>
+
+        <div class="form-actions">
+          <button 
+            type="button" 
+            class="btn-generate" 
+            (click)="generateAutomatically()"
+            [disabled]="isGenerating || !errorSentenceForm.get('word_id')?.value || !errorSentenceForm.get('direction')?.value"
+          >
+            <span *ngIf="!isGenerating">🤖 Générer automatiquement</span>
+            <span *ngIf="isGenerating">Génération en cours...</span>
+          </button>
+          <button type="submit" [disabled]="errorSentenceForm.invalid" class="btn-primary">
+            {{ editingErrorSentence ? 'Mettre à jour' : 'Ajouter' }}
+          </button>
+          <button type="button" class="btn-secondary" (click)="cancelEdit()" *ngIf="editingErrorSentence">
+            Annuler
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Filtres -->
+    <div class="filters-section">
+      <h3>Filtres</h3>
+      <div class="filters-row">
+        <div class="filter-group">
+          <label for="filter_lesson">Leçon</label>
+          <select id="filter_lesson" [(ngModel)]="filterLessonId">
+            <option value="">Toutes les leçons</option>
+            <option *ngFor="let lesson of lessons" [value]="lesson.id">
+              {{ lesson.title }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter_direction">Direction</label>
+          <select id="filter_direction" [(ngModel)]="filterDirection">
+            <option value="">Toutes les directions</option>
+            <option value="dutch_to_french">Néerlandais → Français</option>
+            <option value="french_to_dutch">Français → Néerlandais</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter_word">Mot</label>
+          <select id="filter_word" [(ngModel)]="filterWordId">
+            <option value="">Tous les mots</option>
+            <option *ngFor="let word of words" [value]="word.id">
+              {{ word.french_text }} / {{ word.dutch_text }}
+            </option>
+          </select>
+        </div>
+
+        <button class="btn-clear-filters" (click)="clearFilters()">Effacer les filtres</button>
+      </div>
+    </div>
+
+    <!-- Liste des phrases avec erreurs -->
+    <div class="error-sentences-section">
+      <h2>Phrases avec erreurs ({{ filteredErrorSentences.length }})</h2>
+      
+      <div *ngIf="filteredErrorSentences.length === 0" class="no-results">
+        <p>Aucune phrase avec erreur trouvée.</p>
+      </div>
+
+      <div *ngFor="let errorSentence of filteredErrorSentences" class="error-sentence-card">
+        <div class="error-sentence-header">
+          <div class="error-sentence-info">
+            <span class="word-info">{{ getWordText(errorSentence.word_id) }}</span>
+            <span class="lesson-info">{{ getLessonTitle(errorSentence.lesson_id) }}</span>
+            <span class="direction-badge" [class.dutch-to-french]="errorSentence.direction === 'dutch_to_french'">
+              {{ errorSentence.direction === 'dutch_to_french' ? 'NL → FR' : 'FR → NL' }}
+            </span>
+            <span class="error-type-badge" *ngIf="errorSentence.error_type">
+              {{ getErrorTypeLabel(errorSentence.error_type) }}
+            </span>
+          </div>
+          <div class="error-sentence-actions">
+            <button class="btn-edit" (click)="editErrorSentence(errorSentence)">Modifier</button>
+            <button class="btn-delete" (click)="deleteErrorSentence(errorSentence)">Supprimer</button>
+          </div>
+        </div>
+        
+        <div class="error-sentence-content">
+          <div class="sentence-row">
+            <span class="sentence-label">Avec erreur :</span>
+            <span class="sentence-text error-text">{{ errorSentence.sentence_with_error }}</span>
+          </div>
+          <div class="sentence-row">
+            <span class="sentence-label">Correcte :</span>
+            <span class="sentence-text correct-text">{{ errorSentence.sentence_correct }}</span>
+          </div>
+          <div class="explanation-row" *ngIf="errorSentence.explanation">
+            <span class="explanation-label">Explication :</span>
+            <span class="explanation-text">{{ errorSentence.explanation }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

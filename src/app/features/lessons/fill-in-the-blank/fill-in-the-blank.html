@@ -10,7 +10,7 @@
         <button 
           class="audio-btn" 
           (click)="playAudio()" 
-          *ngIf="audioService.isSupported() && getCurrentWord()?.dutch_text"
+          *ngIf="audioService.isSupported() && currentSentence"
         >
           🔊
         </button>

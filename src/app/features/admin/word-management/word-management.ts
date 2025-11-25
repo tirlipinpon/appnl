@@ -34,6 +34,7 @@ export class WordManagement implements OnInit {
   successMessage = '';
   hiddenWordIds: Set<string> = new Set();
   editedWordIds: Set<string> = new Set(); // Mots qui ont été modifiés personnellement
+  expandedLessons: Set<string> = new Set(); // Leçons ouvertes/fermées
 
   constructor() {
     this.wordForm = this.fb.group({
@@ -337,5 +338,17 @@ export class WordManagement implements OnInit {
       }))
       .filter(group => group.words.length > 0)
       .sort((a, b) => a.lesson.title.localeCompare(b.lesson.title));
+  }
+
+  toggleLesson(lessonId: string): void {
+    if (this.expandedLessons.has(lessonId)) {
+      this.expandedLessons.delete(lessonId);
+    } else {
+      this.expandedLessons.add(lessonId);
+    }
+  }
+
+  isLessonExpanded(lessonId: string): boolean {
+    return this.expandedLessons.has(lessonId);
   }
 }

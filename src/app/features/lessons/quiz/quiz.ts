@@ -169,9 +169,16 @@ export class Quiz implements OnInit {
   }
 
   playAudio(): void {
-    // Toujours lire le néerlandais (la langue à apprendre)
-    if (this.currentWord?.dutch_text) {
-      this.audioService.speak(this.currentWord.dutch_text, 'nl-NL');
+    if (!this.currentWord) return;
+    // Lire le texte selon la direction (le texte affiché dans la question)
+    if (this.direction === 'french_to_dutch') {
+      if (this.currentWord.french_text) {
+        this.audioService.speak(this.currentWord.french_text, 'fr-FR');
+      }
+    } else {
+      if (this.currentWord.dutch_text) {
+        this.audioService.speak(this.currentWord.dutch_text, 'nl-NL');
+      }
     }
   }
 }

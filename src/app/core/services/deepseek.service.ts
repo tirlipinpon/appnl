@@ -316,5 +316,181 @@ export class DeepSeekService {
       console.error('Error saving sentence:', error);
     }
   }
+
+  /**
+   * Génère une phrase avec erreur grammaticale et sa correction
+   * @param word Le mot clé à utiliser dans la phrase
+   * @param direction La direction de traduction (détermine la langue de la phrase)
+   * @param errorType Type d'erreur souhaité (ex: 'word_order', 'conjugation', 'article', 'preposition')
+   * @param frenchTranslation La traduction française du mot (pour clarifier le contexte)
+   * @returns Une phrase avec erreur, sa correction et une explication
+   */
+  async generateErrorSentence(
+    word: string,
+    direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french',
+    errorType?: string,
+    frenchTranslation?: string
+  ): Promise<{
+    sentence_with_error: string;
+    sentence_correct: string;
+    explanation: string;
+    error_type?: string;
+  }> {
+    try {
+      const language = direction === 'dutch_to_french' ? 'néerlandais' : 'français';
+      let prompt = `Crée DEUX phrases en ${language} : une phrase CORRECTE et une phrase AVEC ERREUR. `;
+      
+      prompt += `Le mot clé à utiliser est : "${word}". `;
+      
+      if (direction === 'dutch_to_french' && frenchTranslation) {
+        prompt += `Le mot néerlandais "${word}" signifie "${frenchTranslation}" en français. `;
+      }
+      
+      prompt += `\nIMPORTANT : Les deux phrases doivent avoir EXACTEMENT LE MÊME NOMBRE DE MOTS. `;
+      prompt += `L'erreur doit être uniquement un mélange/inversion de l'ordre des mots, pas d'ajout ou de suppression de mots. `;
+      
+      if (errorType) {
+        prompt += `Type d'erreur souhaité : ${errorType}. `;
+      } else {
+        prompt += `Choisis un type d'erreur courant (ordre des mots, conjugaison, article, préposition, etc.). `;
+      }
+      
+      prompt += `La phrase doit être courte (maximum 8-10 mots) et l'erreur doit être évidente pour un apprenant. `;
+      prompt += `L'erreur doit être une erreur grammaticale réelle et courante, pas une faute d'orthographe. `;
+      prompt += `La phrase CORRECTE doit être grammaticalement parfaite et contenir le mot "${word}". `;
+      prompt += `La phrase AVEC ERREUR doit avoir les mêmes mots mais dans un ordre incorrect ou avec une erreur grammaticale (conjugaison, article, etc.). `;
+      
+      prompt += `\nRéponds UNIQUEMENT au format JSON suivant (sans texte supplémentaire) :\n`;
+      prompt += `{\n`;
+      prompt += `  "sentence_with_error": "phrase avec erreur grammaticale",\n`;
+      prompt += `  "sentence_correct": "phrase corrigée",\n`;
+      prompt += `  "explanation": "explication courte de l'erreur (1-2 phrases)",\n`;
+      prompt += `  "error_type": "type d'erreur (ex: word_order, conjugation, article, preposition)"\n`;
+      prompt += `}\n`;
+      
+      prompt += `\nExemples (les deux phrases ont le même nombre de mots) :\n`;
+      if (direction === 'dutch_to_french') {
+        prompt += `- Erreur d'ordre :\n`;
+        prompt += `  Phrase correcte : "Ik ga morgen naar de winkel" (5 mots)\n`;
+        prompt += `  Phrase avec erreur : "Ik ga naar de winkel morgen" (5 mots, même nombre)\n`;
+        prompt += `  Explication : "L'adverbe de temps 'morgen' doit être placé avant le complément de lieu 'naar de winkel'"\n\n`;
+        prompt += `- Erreur de conjugaison :\n`;
+        prompt += `  Phrase correcte : "Hij werkt in de tuin" (5 mots)\n`;
+        prompt += `  Phrase avec erreur : "Hij werk in de tuin" (5 mots, même nombre)\n`;
+        prompt += `  Explication : "Le verbe 'werken' doit être conjugué à la 3e personne du singulier : 'werkt'"\n`;
+      } else {
+        prompt += `- Erreur d'ordre :\n`;
+        prompt += `  Phrase correcte : "Je vais demain au cinéma" (5 mots)\n`;
+        prompt += `  Phrase avec erreur : "Je vais au cinéma demain" (5 mots, même nombre)\n`;
+        prompt += `  Explication : "L'adverbe de temps 'demain' doit être placé avant le complément de lieu 'au cinéma'"\n`;
+      }
+
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'Tu es un assistant qui crée des exercices de grammaire pour apprendre les langues. Tu génères des phrases avec des erreurs grammaticales courantes et leurs corrections.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.9,
+          max_tokens: 300
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content;
+      
+      if (!content) {
+        throw new Error('No content received from API');
+      }
+
+      return this.parseErrorSentenceResponse(content);
+    } catch (error) {
+      console.error('Error generating error sentence:', error);
+      // Fallback : créer une phrase simple avec erreur
+      return this.createFallbackErrorSentence(word, direction, errorType);
+    }
+  }
+
+  /**
+   * Parse la réponse JSON de DeepSeek pour une phrase avec erreur
+   */
+  private parseErrorSentenceResponse(content: string): {
+    sentence_with_error: string;
+    sentence_correct: string;
+    explanation: string;
+    error_type?: string;
+  } {
+    try {
+      // Nettoyer le contenu (enlever les markdown code blocks si présents)
+      let cleanedContent = content.trim();
+      cleanedContent = cleanedContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      
+      // Essayer d'extraire le JSON de la réponse
+      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        
+        return {
+          sentence_with_error: parsed.sentence_with_error || '',
+          sentence_correct: parsed.sentence_correct || '',
+          explanation: parsed.explanation || '',
+          error_type: parsed.error_type
+        };
+      }
+      
+      throw new Error('No JSON found in response');
+    } catch (error) {
+      console.error('Error parsing error sentence response:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Crée une phrase de fallback avec erreur simple
+   */
+  private createFallbackErrorSentence(
+    word: string,
+    direction: 'french_to_dutch' | 'dutch_to_french',
+    errorType?: string
+  ): {
+    sentence_with_error: string;
+    sentence_correct: string;
+    explanation: string;
+    error_type?: string;
+  } {
+    if (direction === 'dutch_to_french') {
+      // Exemple en néerlandais avec erreur d'ordre
+      return {
+        sentence_with_error: `Ik ga naar de winkel morgen.`,
+        sentence_correct: `Ik ga morgen naar de winkel.`,
+        explanation: `L'adverbe de temps "morgen" doit être placé avant le complément de lieu "naar de winkel".`,
+        error_type: errorType || 'word_order'
+      };
+    } else {
+      // Exemple en français avec erreur d'ordre
+      return {
+        sentence_with_error: `Je vais au cinéma demain.`,
+        sentence_correct: `Je vais demain au cinéma.`,
+        explanation: `L'adverbe de temps "demain" doit être placé avant le complément de lieu "au cinéma".`,
+        error_type: errorType || 'word_order'
+      };
+    }
+  }
 }
 

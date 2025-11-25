@@ -42,6 +42,13 @@
   text-align: center;
 }
 
+.question-text-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
 .question-text {
   font-size: 32px;
   font-weight: 700;
@@ -125,21 +132,20 @@
 }
 
 .audio-btn {
-  padding: 8px 12px;
+  padding: 6px 9px;
   background: #667eea;
   color: white;
   border: 2px solid #667eea;
   border-radius: 8px;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
-  height: 40px;
-  margin-left: 8px;
+  min-width: 32px;
+  height: 32px;
 }
 
 .audio-btn:hover {

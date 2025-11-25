@@ -199,16 +199,56 @@ select.error {
   margin-bottom: 0;
 }
 
+.lesson-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding: 12px;
+  margin: -12px -12px 0 -12px;
+  border-radius: 8px 8px 0 0;
+  transition: background-color 0.2s;
+}
+
+.lesson-header:hover {
+  background-color: rgba(102, 126, 234, 0.05);
+}
+
 .lesson-title {
   font-size: 22px;
   font-weight: 700;
   color: #667eea;
-  margin: 0 0 24px 0;
+  margin: 0;
   padding-bottom: 12px;
   border-bottom: 3px solid #667eea;
   display: block;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  flex: 1;
+}
+
+.toggle-icon {
+  font-size: 16px;
+  color: #667eea;
+  transition: transform 0.3s ease;
+  margin-left: 16px;
+  padding-bottom: 12px;
+}
+
+.toggle-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.lesson-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.lesson-content.expanded {
+  max-height: 5000px;
+  transition: max-height 0.5s ease-in;
 }
 
 .table-header {
@@ -358,9 +398,10 @@ select.error {
   font-size: 18px;
   font-weight: 600;
   color: #999;
-  margin: 24px 0 16px 0;
+  margin: 0;
   padding-bottom: 8px;
   border-bottom: 1px solid #e0e0e0;
+  flex: 1;
 }
 
 .hidden-row {

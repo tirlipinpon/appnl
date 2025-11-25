@@ -151,7 +151,19 @@
       ></app-reorder-sentence>
     </div>
 
-    <!-- Étape 6: Leçon complétée -->
+    <!-- Étape 6: Trouver l'erreur -->
+    <div *ngIf="currentStep === 'findError'">
+      <app-find-error
+        [words]="findErrorWords"
+        [direction]="findErrorDirection"
+        [lessonId]="lesson ? lesson.id : undefined"
+        (completed)="onFindErrorCompleted($event)"
+        (reverseRequested)="onFindErrorReverseRequested()"
+        (nextGameRequested)="onFindErrorNextGameRequested()"
+      ></app-find-error>
+    </div>
+
+    <!-- Étape 7: Leçon complétée -->
     <div *ngIf="currentStep === 'completed'" class="completion-screen">
       <div class="completion-content">
         <h2>🎉 Félicitations !</h2>
@@ -173,6 +185,10 @@
           <div class="score-card">
             <h3>Réordonnancement</h3>
             <p class="score-value">{{ reorderSentenceScore?.correct }} / {{ reorderSentenceScore?.total }}</p>
+          </div>
+          <div class="score-card">
+            <h3>Trouver l'erreur</h3>
+            <p class="score-value">{{ findErrorScore?.correct }} / {{ findErrorScore?.total }}</p>
           </div>
         </div>
 

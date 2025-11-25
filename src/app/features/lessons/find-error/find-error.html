@@ -1,0 +1,181 @@
+<div class="find-error-container">
+  <div *ngIf="isLoading" class="loading">
+    <div>Chargement des phrases avec erreurs...</div>
+    <div class="loading-subtitle">Génération automatique des phrases manquantes avec l'IA</div>
+  </div>
+  
+  <div *ngIf="isLoadingNext" class="loading-next">Chargement de la phrase suivante...</div>
+
+  <div *ngIf="!isLoading && currentErrorSentence" class="find-error-content">
+    <div class="question-section">
+      <div class="instruction-text">
+        <h2>Trouvez et corrigez l'erreur</h2>
+        <p class="instruction-description">Réordonnez les mots pour corriger la phrase ci-dessous</p>
+      </div>
+      
+      <div class="error-sentence-display">
+        <div class="sentence-label">Réordonnez les mots pour corriger la phrase :</div>
+        <div class="sentence-words-container">
+          <ng-container *ngFor="let word of targetWords; let i = index">
+            <div
+              *ngIf="word !== null"
+              class="word-item sentence-word"
+              [class.correct]="showResult && getWordStatus(i) === 'correct'"
+              [class.incorrect]="showResult && getWordStatus(i) === 'incorrect'"
+              draggable="true"
+              (dragstart)="onDragStartFromTarget($event, word, i)"
+              (dragend)="onDragEnd($event)"
+              (dragover)="onDragOverTarget($event, i)"
+              (drop)="onDropTarget($event, i)"
+            >
+              {{ word.text }}
+            </div>
+            <div
+              *ngIf="word === null"
+              class="word-slot-empty"
+              (dragover)="onDragOverTarget($event, i)"
+              (drop)="onDropTarget($event, i)"
+            >
+              <span class="drop-hint">Déposez ici</span>
+            </div>
+          </ng-container>
+        </div>
+        
+        <!-- Zone des mots disponibles (mots manquants) -->
+        <div *ngIf="availableWords.length > 0" class="available-words-section">
+          <div class="available-label">Mots disponibles (glissez ici pour compléter la phrase) :</div>
+          <div 
+            class="available-words-container"
+            (dragover)="onDragOverAvailable($event)"
+            (drop)="onDropAvailable($event, 0)"
+          >
+            <div
+              *ngFor="let word of availableWords; let i = index"
+              class="word-item available-word"
+              draggable="true"
+              (dragstart)="onDragStartFromAvailable($event, word, i)"
+              (dragend)="onDragEnd($event)"
+            >
+              {{ word.text }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Zone des mots inutiles (mots en trop) -->
+        <div *ngIf="unusedWords.length > 0" class="unused-words-section">
+          <div class="unused-label">Mots inutiles (glissez ici les mots en trop) :</div>
+          <div 
+            class="unused-words-container"
+            (dragover)="onDragOverUnused($event)"
+            (drop)="onDropUnused($event, 0)"
+          >
+            <div
+              *ngFor="let word of unusedWords; let i = index"
+              class="word-item unused-word"
+              draggable="true"
+              (dragstart)="onDragStartFromUnused($event, word, i)"
+              (dragend)="onDragEnd($event)"
+            >
+              {{ word.text }}
+            </div>
+          </div>
+        </div>
+
+        <button 
+          class="audio-btn" 
+          (click)="playAudio()" 
+          *ngIf="audioService.isSupported()"
+          title="Écouter la phrase correcte"
+        >
+          🔊
+        </button>
+      </div>
+    </div>
+
+    <!-- Feedback et résultat -->
+    <div *ngIf="showResult" class="result-section">
+      <div class="result-message" [class.correct]="isCorrect" [class.incorrect]="!isCorrect">
+        <span *ngIf="isCorrect" class="result-icon">✓</span>
+        <span *ngIf="!isCorrect" class="result-icon">✗</span>
+        <div class="result-text">
+          <div *ngIf="isCorrect" class="result-title">Bravo !</div>
+          <div *ngIf="!isCorrect" class="result-title">Ce n'est pas correct</div>
+          <div *ngIf="currentErrorSentence.explanation" class="result-explanation">
+            {{ currentErrorSentence.explanation }}
+          </div>
+          <div *ngIf="!isCorrect" class="correct-answer">
+            Réponse correcte : <strong>{{ currentErrorSentence.sentence_correct }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="navigation-buttons">
+      <button class="btn-nav" (click)="previousQuestion()" [disabled]="currentIndex === 0 || isLoadingNext">
+        ← Précédent
+      </button>
+      <button 
+        class="btn-check" 
+        (click)="checkAnswer()"
+        [disabled]="showResult || !isAllFilled()"
+      >
+        Vérifier
+      </button>
+      <button 
+        class="btn-primary" 
+        (click)="nextQuestion()" 
+        [disabled]="isLoadingNext || !showResult"
+      >
+        <span *ngIf="!isLoadingNext">Suivant →</span>
+        <span *ngIf="isLoadingNext">Chargement...</span>
+      </button>
+    </div>
+
+    <div class="action-buttons">
+      <button 
+        class="btn-skip" 
+        (click)="skipQuestion()"
+        [disabled]="showResult"
+      >
+        Passer
+      </button>
+      <button 
+        class="btn-skip-game" 
+        (click)="nextGameRequested.emit()"
+      >
+        ⏭️ Passer au jeu suivant
+      </button>
+    </div>
+
+    <div *ngIf="currentIndex === words.length - 1 && showResult && isAllCorrect()" class="completion-section">
+      <div class="score">
+        Score : {{ score.correct }} / {{ score.total }}
+      </div>
+      <button 
+        class="btn-primary" 
+        (click)="completed.emit(score)"
+      >
+        Terminer l'exercice
+      </button>
+      <button 
+        class="btn-secondary" 
+        (click)="reverseRequested.emit()"
+      >
+        🔄 Refaire en {{ direction === 'dutch_to_french' ? 'français → néerlandais' : 'néerlandais → français' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="!isLoading && !currentErrorSentence" class="no-error-sentences">
+    <p>Aucune phrase avec erreur disponible pour cette leçon.</p>
+    <p class="hint" *ngIf="words.length === 0">Aucun mot dans cette leçon.</p>
+    <p class="hint" *ngIf="words.length > 0">La génération automatique a peut-être échoué. Vérifiez la console pour plus de détails.</p>
+    <p class="hint">Vous pouvez aussi créer des phrases avec erreurs manuellement dans la section d'administration.</p>
+  </div>
+
+  <div class="progress-bar" *ngIf="!isLoading && currentErrorSentence">
+    <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
+    <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
+  </div>
+</div>
+

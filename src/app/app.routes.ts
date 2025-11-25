@@ -45,6 +45,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'admin/error-sentences',
+    loadComponent: () => import('./features/admin/error-sentence-management/error-sentence-management').then(m => m.ErrorSentenceManagement),
+    canActivate: [authGuard]
+  },
+  {
     path: '**',
     redirectTo: '/dashboard'
   }

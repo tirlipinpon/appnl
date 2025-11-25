@@ -6,7 +6,7 @@
         <button 
           class="audio-btn" 
           (click)="playAudio()" 
-          *ngIf="audioService.isSupported() && currentWord?.dutch_text"
+          *ngIf="audioService.isSupported() && currentWord && ((direction === 'french_to_dutch' && currentWord.french_text) || (direction === 'dutch_to_french' && currentWord.dutch_text))"
         >
           🔊
         </button>

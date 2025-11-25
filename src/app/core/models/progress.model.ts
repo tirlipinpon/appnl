@@ -28,7 +28,7 @@ export interface QuizAttempt {
   id: string;
   user_id: string;
   word_id: string;
-  quiz_type: 'multiple_choice' | 'typing' | 'fill_in_blank';
+  quiz_type: 'multiple_choice' | 'typing' | 'fill_in_blank' | 'reorder_sentence' | 'find_error';
   direction: 'french_to_dutch' | 'dutch_to_french';
   user_answer: string;
   correct_answer: string;
@@ -36,6 +36,6 @@ export interface QuizAttempt {
   created_at?: string;
 }
 
-export type QuizType = 'multiple_choice' | 'typing' | 'fill_in_blank';
+export type QuizType = 'multiple_choice' | 'typing' | 'fill_in_blank' | 'reorder_sentence' | 'find_error';
 export type QuizDirection = 'french_to_dutch' | 'dutch_to_french';
 

@@ -329,11 +329,16 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
   }
 
   playAudio(): void {
-    // Toujours lire le néerlandais (la langue à apprendre)
-    // Peu importe la direction, on apprend toujours le néerlandais
-    const currentWord = this.getCurrentWord();
-    if (currentWord?.dutch_text) {
-      this.audioService.speak(currentWord.dutch_text, 'nl-NL');
+    if (!this.currentSentence) return;
+    // Lire uniquement le mot manquant (le mot à deviner)
+    const missingWord = this.currentSentence.missingWord;
+    
+    if (this.direction === 'dutch_to_french') {
+      // Le mot manquant est en néerlandais
+      this.audioService.speak(missingWord, 'nl-NL');
+    } else {
+      // Le mot manquant est en français
+      this.audioService.speak(missingWord, 'fr-FR');
     }
   }
 

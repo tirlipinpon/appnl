@@ -15,12 +15,13 @@ import { Quiz } from '../quiz/quiz';
 import { FrenchWriting } from '../french-writing/french-writing';
 import { FillInTheBlank } from '../fill-in-the-blank/fill-in-the-blank';
 import { ReorderSentence } from '../reorder-sentence/reorder-sentence';
+import { FindError } from '../find-error/find-error';
 
-type LessonStep = 'flashcards' | 'quiz' | 'frenchWriting' | 'fillInBlank' | 'reorderSentence' | 'completed';
+type LessonStep = 'flashcards' | 'quiz' | 'frenchWriting' | 'fillInBlank' | 'reorderSentence' | 'findError' | 'completed';
 
 @Component({
   selector: 'app-lesson-detail',
-  imports: [CommonModule, FormsModule, RouterLink, FlashcardView, Quiz, FrenchWriting, FillInTheBlank, ReorderSentence],
+  imports: [CommonModule, FormsModule, RouterLink, FlashcardView, Quiz, FrenchWriting, FillInTheBlank, ReorderSentence, FindError],
   templateUrl: './lesson-detail.html',
   styleUrl: './lesson-detail.css',
 })
@@ -42,12 +43,14 @@ export class LessonDetail implements OnInit {
   frenchWritingWords: Word[] = [];
   fillInBlankWords: Word[] = [];
   reorderSentenceWords: Word[] = [];
+  findErrorWords: Word[] = [];
   currentStep: LessonStep = 'flashcards';
   currentFlashcardIndex = 0;
   quizScore: { correct: number; total: number } | null = null;
   frenchWritingScore: { correct: number; total: number } | null = null;
   fillInBlankScore: { correct: number; total: number } | null = null;
   reorderSentenceScore: { correct: number; total: number } | null = null;
+  findErrorScore: { correct: number; total: number } | null = null;
   isLoading = true;
   
   // Gestion des mots personnels
@@ -64,6 +67,7 @@ export class LessonDetail implements OnInit {
   frenchWritingDirection: 'french_to_dutch' | 'dutch_to_french' = 'french_to_dutch';
   fillInBlankDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
   reorderSentenceDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
+  findErrorDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
 
   /**
    * Mélange un tableau de manière aléatoire (algorithme Fisher-Yates)
@@ -162,6 +166,7 @@ export class LessonDetail implements OnInit {
       this.frenchWritingWords = this.shuffleArray(wordsToUse);
       this.fillInBlankWords = this.shuffleArray(wordsToUse);
       this.reorderSentenceWords = this.shuffleArray(wordsToUse);
+      this.findErrorWords = this.shuffleArray(wordsToUse);
     } catch (error) {
       console.error('Error loading lesson:', error);
     } finally {
@@ -224,8 +229,8 @@ export class LessonDetail implements OnInit {
   }
 
   private async calculateFinalScore() {
-    const totalScore = (this.quizScore?.correct || 0) + (this.frenchWritingScore?.correct || 0) + (this.fillInBlankScore?.correct || 0) + (this.reorderSentenceScore?.correct || 0);
-    const totalQuestions = (this.quizScore?.total || 0) + (this.frenchWritingScore?.total || 0) + (this.fillInBlankScore?.total || 0) + (this.reorderSentenceScore?.total || 0);
+    const totalScore = (this.quizScore?.correct || 0) + (this.frenchWritingScore?.correct || 0) + (this.fillInBlankScore?.correct || 0) + (this.reorderSentenceScore?.correct || 0) + (this.findErrorScore?.correct || 0);
+    const totalQuestions = (this.quizScore?.total || 0) + (this.frenchWritingScore?.total || 0) + (this.fillInBlankScore?.total || 0) + (this.reorderSentenceScore?.total || 0) + (this.findErrorScore?.total || 0);
     const successRate = totalQuestions > 0 ? (totalScore / totalQuestions) * 100 : 0;
 
     console.log(`Calculating final score: ${totalScore}/${totalQuestions} = ${Math.round(successRate)}%`);
@@ -258,20 +263,26 @@ export class LessonDetail implements OnInit {
     this.currentStep = 'reorderSentence';
   }
 
-  onReorderSentenceNextGameRequested() {
-    // C'est le dernier jeu, donc terminer la leçon
-    this.calculateFinalScore();
-  }
-
   async onReorderSentenceCompleted(score: { correct: number; total: number }) {
     this.reorderSentenceScore = score;
+    // Passer au jeu "Trouver l'erreur"
+    this.currentStep = 'findError';
+  }
+
+  onReorderSentenceNextGameRequested() {
+    // Passer au jeu "Trouver l'erreur"
+    this.currentStep = 'findError';
+  }
+
+  async onFindErrorCompleted(score: { correct: number; total: number }) {
+    this.findErrorScore = score;
     
     // Marquer la leçon comme complétée si le score global est réussi (par exemple, > 70%)
-    const totalScore = (this.quizScore?.correct || 0) + (this.frenchWritingScore?.correct || 0) + (this.fillInBlankScore?.correct || 0) + score.correct;
-    const totalQuestions = (this.quizScore?.total || 0) + (this.frenchWritingScore?.total || 0) + (this.fillInBlankScore?.total || 0) + score.total;
+    const totalScore = (this.quizScore?.correct || 0) + (this.frenchWritingScore?.correct || 0) + (this.fillInBlankScore?.correct || 0) + (this.reorderSentenceScore?.correct || 0) + score.correct;
+    const totalQuestions = (this.quizScore?.total || 0) + (this.frenchWritingScore?.total || 0) + (this.fillInBlankScore?.total || 0) + (this.reorderSentenceScore?.total || 0) + score.total;
     const successRate = totalQuestions > 0 ? (totalScore / totalQuestions) * 100 : 0;
 
-    console.log(`Reorder sentence completed. Calculating final score: ${totalScore}/${totalQuestions} = ${Math.round(successRate)}%`);
+    console.log(`Find error completed. Calculating final score: ${totalScore}/${totalQuestions} = ${Math.round(successRate)}%`);
 
     if (successRate >= 70) {
       console.log(`Score suffisant (${Math.round(successRate)}%), marquant la leçon comme complétée.`);
@@ -291,6 +302,24 @@ export class LessonDetail implements OnInit {
     }
   }
 
+  onFindErrorNextGameRequested() {
+    // C'est le dernier jeu, donc terminer la leçon
+    this.calculateFinalScore();
+  }
+
+  onFindErrorReverseRequested() {
+    // Inverser la direction et remélanger les mots pour le jeu "Trouver l'erreur"
+    this.findErrorDirection = this.findErrorDirection === 'french_to_dutch' ? 'dutch_to_french' : 'french_to_dutch';
+    this.findErrorWords = this.shuffleArray(this.words);
+    this.findErrorScore = null;
+    // Forcer la recréation du composant en changeant temporairement l'étape
+    const currentStep = this.currentStep;
+    this.currentStep = 'reorderSentence';
+    setTimeout(() => {
+      this.currentStep = currentStep;
+    }, 0);
+  }
+
   async restartLesson() {
     this.currentStep = 'flashcards';
     this.currentFlashcardIndex = 0;
@@ -298,12 +327,14 @@ export class LessonDetail implements OnInit {
     this.frenchWritingScore = null;
     this.fillInBlankScore = null;
     this.reorderSentenceScore = null;
+    this.findErrorScore = null;
     // Réinitialiser les directions
     this.flashcardDirection = 'french_to_dutch';
     this.quizDirection = 'french_to_dutch';
     this.frenchWritingDirection = 'dutch_to_french';
     this.fillInBlankDirection = 'dutch_to_french';
     this.reorderSentenceDirection = 'dutch_to_french';
+    this.findErrorDirection = 'dutch_to_french';
     
     // Recharger et filtrer les mots à réviser
     if (this.lesson) {
@@ -315,6 +346,7 @@ export class LessonDetail implements OnInit {
       this.frenchWritingWords = this.shuffleArray(this.words);
       this.fillInBlankWords = this.shuffleArray(this.words);
       this.reorderSentenceWords = this.shuffleArray(this.words);
+      this.findErrorWords = this.shuffleArray(this.words);
     }
   }
 

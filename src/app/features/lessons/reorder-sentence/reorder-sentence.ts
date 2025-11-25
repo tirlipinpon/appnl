@@ -460,8 +460,18 @@ export class ReorderSentence implements OnInit {
   playAudio() {
     if (this.currentSentence && this.audioService.isSupported()) {
       // Reconstruire la phrase complète en remplaçant "_____" par le mot manquant
-      const completeSentence = this.currentSentence.sentence.replace(/_____/g, this.currentSentence.missingWord);
-      this.audioService.speak(completeSentence, 'nl-NL');
+      const completeSentence = this.currentSentence.sentence.replace(/_____/g, this.currentSentence.missingWord)
+        .replace(/\[MOT\]/gi, this.currentSentence.missingWord)
+        .replace(/\{MOT\}/gi, this.currentSentence.missingWord);
+      
+      // Lire dans la langue selon la direction
+      if (this.direction === 'dutch_to_french') {
+        // Phrase en néerlandais
+        this.audioService.speak(completeSentence, 'nl-NL');
+      } else {
+        // Phrase en français
+        this.audioService.speak(completeSentence, 'fr-FR');
+      }
     }
   }
 
