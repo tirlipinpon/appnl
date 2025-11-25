@@ -170,12 +170,16 @@ export class Quiz implements OnInit {
 
   playAudio(): void {
     if (!this.currentWord) return;
-    // Lire le texte selon la direction (le texte affiché dans la question)
+    // Toujours lire la réponse correcte en néerlandais (la langue qu'on apprend)
+    // Peu importe la direction, on veut entendre la réponse en néerlandais
     if (this.direction === 'french_to_dutch') {
-      if (this.currentWord.french_text) {
-        this.audioService.speak(this.currentWord.french_text, 'fr-FR');
+      // La réponse correcte est en néerlandais
+      if (this.correctAnswer) {
+        this.audioService.speak(this.correctAnswer, 'nl-NL');
       }
     } else {
+      // Direction dutch_to_french : la question est en néerlandais, mais on veut entendre la réponse correcte
+      // Ici la réponse correcte est en français, donc on lit le néerlandais de la question
       if (this.currentWord.dutch_text) {
         this.audioService.speak(this.currentWord.dutch_text, 'nl-NL');
       }
