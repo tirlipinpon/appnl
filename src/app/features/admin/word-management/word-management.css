@@ -209,6 +209,7 @@ select.error {
   margin: -12px -12px 0 -12px;
   border-radius: 8px 8px 0 0;
   transition: background-color 0.2s;
+  margin-bottom: 0;
 }
 
 .lesson-header:hover {
@@ -244,11 +245,13 @@ select.error {
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.3s ease-out;
+  margin-top: 0;
 }
 
 .lesson-content.expanded {
   max-height: 5000px;
   transition: max-height 0.5s ease-in;
+  margin-top: 24px;
 }
 
 .table-header {
@@ -392,6 +395,18 @@ select.error {
   margin-bottom: 24px;
   padding-bottom: 12px;
   border-bottom: 2px solid #e0e0e0;
+}
+
+.hidden-words-section .lesson-header {
+  margin-bottom: 0;
+}
+
+.hidden-words-section .lesson-header:hover {
+  background-color: rgba(153, 153, 153, 0.05);
+}
+
+.hidden-words-section .toggle-icon {
+  color: #999;
 }
 
 .lesson-title-small {
