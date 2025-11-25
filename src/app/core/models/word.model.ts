@@ -5,7 +5,7 @@ export interface Word {
   dutch_text: string;
   audio_url?: string;
   fill_in_blank_sentence?: string;
-  fill_in_blank_sentence_fr?: string;
+  fill_in_blank_sentence_translation?: string;
   created_at?: string;
   updated_at?: string;
 }

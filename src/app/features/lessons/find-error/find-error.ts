@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Word } from '../../../core/models/word.model';
 import { ErrorSentence } from '../../../core/models/error-sentence.model';
@@ -14,7 +14,7 @@ import { AudioService } from '../../../core/services/audio.service';
   templateUrl: './find-error.html',
   styleUrl: './find-error.css',
 })
-export class FindError implements OnInit, OnChanges {
+export class FindError implements OnInit, OnChanges, OnDestroy {
   private errorSentenceService = inject(ErrorSentenceService);
   private progressService = inject(ProgressService);
   private authService = inject(AuthService);
@@ -794,6 +794,10 @@ export class FindError implements OnInit, OnChanges {
         this.prepareDragDropData();
       }
     }
+  }
+
+  ngOnDestroy() {
+    // Nettoyage si nécessaire
   }
 
   /**

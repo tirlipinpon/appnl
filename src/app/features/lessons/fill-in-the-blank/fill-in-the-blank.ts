@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, inject, ViewChildren, QueryList, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject, ViewChildren, QueryList, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Word } from '../../../core/models/word.model';
@@ -15,7 +15,7 @@ import { LessonService } from '../../../core/services/lesson.service';
   templateUrl: './fill-in-the-blank.html',
   styleUrl: './fill-in-the-blank.css',
 })
-export class FillInTheBlank implements OnInit, AfterViewInit {
+export class FillInTheBlank implements OnInit, AfterViewInit, OnDestroy {
   private deepSeekService = inject(DeepSeekService);
   private progressService = inject(ProgressService);
   private authService = inject(AuthService);
@@ -60,6 +60,10 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
   ngAfterViewInit() {
     // S'assurer que les inputs sont bien initialisés
     this.focusFirstInput();
+  }
+
+  ngOnDestroy() {
+    // Nettoyage si nécessaire
   }
 
   focusFirstInput(): void {

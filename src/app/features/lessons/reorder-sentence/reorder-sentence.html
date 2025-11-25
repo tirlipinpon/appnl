@@ -89,7 +89,7 @@
       <button 
         class="btn-primary" 
         (click)="nextQuestion()" 
-        [disabled]="isLoadingNext || !isAllCorrect() || currentIndex >= words.length - 1"
+        [disabled]="isLoadingNext || currentIndex >= words.length - 1"
       >
         <span *ngIf="!isLoadingNext">Suivant →</span>
         <span *ngIf="isLoadingNext">Chargement...</span>

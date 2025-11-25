@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Word } from '../../../core/models/word.model';
 import { DeepSeekService, FillInTheBlankSentence } from '../../../core/services/deepseek.service';
@@ -19,7 +19,7 @@ interface WordItem {
   templateUrl: './reorder-sentence.html',
   styleUrl: './reorder-sentence.css',
 })
-export class ReorderSentence implements OnInit {
+export class ReorderSentence implements OnInit, OnDestroy {
   private deepSeekService = inject(DeepSeekService);
   private progressService = inject(ProgressService);
   private authService = inject(AuthService);
@@ -86,6 +86,10 @@ export class ReorderSentence implements OnInit {
 
   async ngOnInit() {
     await this.loadSentences();
+  }
+
+  ngOnDestroy() {
+    // Nettoyage si nécessaire
   }
 
   async loadSentences() {

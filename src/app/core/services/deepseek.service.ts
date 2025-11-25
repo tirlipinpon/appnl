@@ -33,33 +33,86 @@ export class DeepSeekService {
     frenchTranslation?: string,
     context?: string
   ): Promise<FillInTheBlankSentence> {
-    // 1. Vérifier si une phrase existe déjà dans la DB
-    const storedSentence = await this.getStoredSentence(wordId, direction);
+    // 1. Toujours récupérer la phrase néerlandaise depuis la DB
+    const storedDutchSentence = await this.getStoredSentence(wordId, 'dutch_to_french');
     
-    if (storedSentence) {
-      // Utiliser la phrase de la DB
-      // Récupérer aussi la traduction si elle existe
-      const storedTranslation = await this.getStoredTranslation(wordId, direction);
+    if (storedDutchSentence) {
+      // Phrase néerlandaise existe
+      let sentenceToUse = storedDutchSentence;
+      let translationToUse: string | undefined = undefined;
+      
+      // Récupérer la traduction si elle existe
+      const storedTranslation = await this.getStoredTranslation(wordId, 'dutch_to_french');
+      
+      if (storedTranslation) {
+        translationToUse = storedTranslation;
+      } else {
+        // Générer automatiquement la traduction si elle n'existe pas
+        console.log(`[DeepSeek] Génération automatique de la traduction pour wordId: ${wordId}`);
+        const generatedTranslation = await this.generateTranslationForExistingSentence(
+          storedDutchSentence,
+          'dutch_to_french'
+        );
+        
+        if (generatedTranslation) {
+          translationToUse = generatedTranslation;
+          // Sauvegarder la traduction générée
+          await this.saveTranslationToDatabase(wordId, generatedTranslation, 'dutch_to_french');
+        }
+      }
+      
+      // Pour french_to_dutch, utiliser la traduction française comme phrase
+      if (direction === 'french_to_dutch') {
+        if (translationToUse) {
+          sentenceToUse = translationToUse;
+          // Pour french_to_dutch, la traduction est la phrase néerlandaise originale
+          translationToUse = storedDutchSentence;
+        } else {
+          // Si pas de traduction, générer une nouvelle phrase (ne devrait pas arriver)
+          const newSentence = await this.generateFillInTheBlankSentence(
+            word,
+            existingSentences,
+            context,
+            direction,
+            frenchTranslation
+          );
+          await this.saveSentenceToDatabase(wordId, newSentence.sentence, 'dutch_to_french');
+          if (newSentence.translation) {
+            await this.saveTranslationToDatabase(wordId, newSentence.translation, 'dutch_to_french');
+          }
+          return newSentence;
+        }
+      }
+      
       return {
-        sentence: storedSentence,
+        sentence: sentenceToUse,
         missingWord: word,
-        translation: storedTranslation || undefined
+        translation: translationToUse
       };
     }
     
-    // 2. Générer une nouvelle phrase avec DeepSeek
+    // 2. Générer une nouvelle phrase néerlandaise avec DeepSeek
     const newSentence = await this.generateFillInTheBlankSentence(
       word,
       existingSentences,
       context,
-      direction,
+      'dutch_to_french', // Toujours générer en néerlandais
       frenchTranslation
     );
     
     // 3. Enregistrer la phrase dans la DB pour réutilisation future
-    await this.saveSentenceToDatabase(wordId, newSentence.sentence, direction);
+    await this.saveSentenceToDatabase(wordId, newSentence.sentence, 'dutch_to_french');
     if (newSentence.translation) {
-      await this.saveTranslationToDatabase(wordId, newSentence.translation, direction);
+      await this.saveTranslationToDatabase(wordId, newSentence.translation, 'dutch_to_french');
+    }
+    
+    // Pour french_to_dutch, retourner la traduction comme phrase
+    if (direction === 'french_to_dutch' && newSentence.translation) {
+      return {
+        sentence: newSentence.translation,
+        missingWord: word,
+        translation: newSentence.sentence // La phrase néerlandaise devient la traduction
+      };
     }
     
     return newSentence;
@@ -230,64 +283,36 @@ export class DeepSeekService {
   }
 
   /**
-   * Récupère la phrase stockée dans la DB pour un mot selon la direction
+   * Récupère la phrase néerlandaise stockée dans la DB
+   * Toujours retourne fill_in_blank_sentence (phrase néerlandaise)
    */
   private async getStoredSentence(
     wordId: string, 
     direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french'
   ): Promise<string | null> {
     try {
-      if (direction === 'dutch_to_french') {
-        const { data, error } = await this.supabaseService.client
-          .from('nlapp_words')
-          .select('fill_in_blank_sentence')
-          .eq('id', wordId)
-          .single();
-        
-        if (error) {
-          console.error('Error fetching dutch sentence:', error);
-          return null;
-        }
-        
-        if (!data) {
-          return null;
-        }
-        
-        const sentence = data.fill_in_blank_sentence;
-        if (sentence && sentence.trim()) {
-          console.log(`Phrase néerlandaise récupérée depuis DB pour wordId: ${wordId}`);
-          return sentence;
-        }
-        return null;
-      } else {
-        // Direction: french_to_dutch - phrase en français
-        const { data, error } = await this.supabaseService.client
-          .from('nlapp_words')
-          .select('fill_in_blank_sentence_fr')
-          .eq('id', wordId)
-          .single();
-        
-        if (error) {
-          console.error('Error fetching french sentence:', error);
-          // Si la colonne n'existe pas, afficher un message d'aide
-          if (error.code === '42703' || error.code === 'PGRST204') {
-            console.error('⚠️ La colonne fill_in_blank_sentence_fr n\'existe pas dans la base de données.');
-            console.error('💡 Solution: Exécutez le script SQL fix-french-sentence-column.sql dans Supabase.');
-          }
-          return null;
-        }
-        
-        if (!data) {
-          return null;
-        }
-        
-        const sentence = data.fill_in_blank_sentence_fr;
-        if (sentence && sentence.trim()) {
-          console.log(`Phrase française récupérée depuis DB pour wordId: ${wordId}`);
-          return sentence;
-        }
+      // Toujours récupérer la phrase néerlandaise
+      const { data, error } = await this.supabaseService.client
+        .from('nlapp_words')
+        .select('fill_in_blank_sentence')
+        .eq('id', wordId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching dutch sentence:', error);
         return null;
       }
+      
+      if (!data) {
+        return null;
+      }
+      
+      const sentence = data.fill_in_blank_sentence;
+      if (sentence && sentence.trim()) {
+        console.log(`Phrase néerlandaise récupérée depuis DB pour wordId: ${wordId}`);
+        return sentence;
+      }
+      return null;
     } catch (error) {
       console.error('Error fetching stored sentence:', error);
       return null;
@@ -295,7 +320,8 @@ export class DeepSeekService {
   }
 
   /**
-   * Enregistre la phrase générée dans la DB pour réutilisation future
+   * Enregistre la phrase néerlandaise générée dans la DB
+   * Toujours sauvegarde dans fill_in_blank_sentence
    */
   private async saveSentenceToDatabase(
     wordId: string, 
@@ -303,33 +329,19 @@ export class DeepSeekService {
     direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french'
   ): Promise<void> {
     try {
-      const updateData = direction === 'dutch_to_french'
-        ? { fill_in_blank_sentence: sentence }
-        : { fill_in_blank_sentence_fr: sentence };
-      
-      const columnName = direction === 'dutch_to_french' 
-        ? 'fill_in_blank_sentence' 
-        : 'fill_in_blank_sentence_fr';
-      
-      console.log(`Sauvegarde phrase ${direction === 'dutch_to_french' ? 'néerlandaise' : 'française'} dans ${columnName} pour wordId: ${wordId}`);
+      console.log(`Sauvegarde phrase néerlandaise dans fill_in_blank_sentence pour wordId: ${wordId}`);
       
       const { data, error } = await this.supabaseService.client
         .from('nlapp_words')
-        .update(updateData)
+        .update({ fill_in_blank_sentence: sentence })
         .eq('id', wordId)
         .select();
       
       if (error) {
         console.error('Error saving sentence to database:', error);
-        console.error('Update data:', updateData);
         console.error('WordId:', wordId);
-        // Si la colonne n'existe pas, afficher un message d'aide
-        if (error.code === '42703' || error.code === 'PGRST204') {
-          console.error('⚠️ La colonne fill_in_blank_sentence_fr n\'existe pas dans la base de données.');
-          console.error('💡 Solution: Exécutez le script SQL fix-french-sentence-column.sql dans Supabase.');
-        }
       } else {
-        console.log(`Phrase ${direction === 'dutch_to_french' ? 'néerlandaise' : 'française'} sauvegardée avec succès pour wordId: ${wordId}`);
+        console.log(`Phrase néerlandaise sauvegardée avec succès pour wordId: ${wordId}`);
       }
     } catch (error) {
       console.error('Error saving sentence:', error);
@@ -337,20 +349,17 @@ export class DeepSeekService {
   }
 
   /**
-   * Récupère la traduction stockée dans la DB pour un mot selon la direction
+   * Récupère la traduction française stockée dans la DB
+   * Toujours utilise fill_in_blank_sentence_translation
    */
   private async getStoredTranslation(
     wordId: string, 
     direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french'
   ): Promise<string | null> {
     try {
-      const columnName = direction === 'dutch_to_french' 
-        ? 'fill_in_blank_sentence_translation' 
-        : 'fill_in_blank_sentence_fr_translation';
-      
       const { data, error } = await this.supabaseService.client
         .from('nlapp_words')
-        .select(columnName)
+        .select('fill_in_blank_sentence_translation')
         .eq('id', wordId)
         .single();
       
@@ -367,7 +376,7 @@ export class DeepSeekService {
         return null;
       }
       
-      const translation = (data as any)[columnName];
+      const translation = data.fill_in_blank_sentence_translation;
       if (translation && translation.trim()) {
         return translation;
       }
@@ -379,7 +388,58 @@ export class DeepSeekService {
   }
 
   /**
-   * Enregistre la traduction dans la DB pour réutilisation future
+   * Génère uniquement la traduction d'une phrase existante
+   * Utile pour compléter les phrases anciennes qui n'ont pas de traduction
+   */
+  async generateTranslationForExistingSentence(
+    sentence: string,
+    direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french'
+  ): Promise<string | null> {
+    try {
+      const targetLanguage = direction === 'dutch_to_french' ? 'français' : 'néerlandais';
+      const sourceLanguage = direction === 'dutch_to_french' ? 'néerlandais' : 'français';
+      
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: `Tu es un traducteur professionnel ${sourceLanguage}-${targetLanguage}. Traduis uniquement la phrase donnée en ${targetLanguage}, sans commentaire ni explication. Réponds uniquement avec la traduction.`
+            },
+            {
+              role: 'user',
+              content: `Traduis cette phrase ${sourceLanguage} en ${targetLanguage} : "${sentence}"`
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 200
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const translation = data.choices[0]?.message?.content?.trim();
+      
+      // Nettoyer la traduction (enlever les guillemets si présents)
+      return translation?.replace(/^["']|["']$/g, '') || null;
+    } catch (error) {
+      console.error('Error generating translation:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Enregistre la traduction française dans la DB
+   * Toujours sauvegarde dans fill_in_blank_sentence_translation
    */
   private async saveTranslationToDatabase(
     wordId: string, 
@@ -387,24 +447,18 @@ export class DeepSeekService {
     direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french'
   ): Promise<void> {
     try {
-      const columnName = direction === 'dutch_to_french' 
-        ? 'fill_in_blank_sentence_translation' 
-        : 'fill_in_blank_sentence_fr_translation';
-      
-      const updateData = { [columnName]: translation };
-      
-      console.log(`Sauvegarde traduction ${direction === 'dutch_to_french' ? 'française' : 'néerlandaise'} dans ${columnName} pour wordId: ${wordId}`);
+      console.log(`Sauvegarde traduction française dans fill_in_blank_sentence_translation pour wordId: ${wordId}`);
       
       const { data, error } = await this.supabaseService.client
         .from('nlapp_words')
-        .update(updateData)
+        .update({ fill_in_blank_sentence_translation: translation })
         .eq('id', wordId)
         .select();
       
       if (error) {
         // Si la colonne n'existe pas encore, juste logger (ne pas bloquer)
         if (error.code === '42703' || error.code === 'PGRST204') {
-          console.warn(`⚠️ La colonne ${columnName} n'existe pas encore dans la base de données. La traduction ne sera pas sauvegardée.`);
+          console.warn(`⚠️ La colonne fill_in_blank_sentence_translation n'existe pas encore dans la base de données. La traduction ne sera pas sauvegardée.`);
           return;
         }
         console.error('Error saving translation to database:', error);
