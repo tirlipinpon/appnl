@@ -385,8 +385,12 @@ export class FillInTheBlank implements OnInit, AfterViewInit, OnDestroy {
 
   playTranslationAudio(): void {
     if (this.currentSentence?.translation && this.audioService.isSupported()) {
-      // Lire la traduction en français
-      this.audioService.speak(this.currentSentence.translation, 'fr-FR');
+      // Lire uniquement le mot français à chercher
+      const currentWord = this.words[this.currentIndex];
+      if (currentWord && this.direction === 'dutch_to_french') {
+        // Lire seulement le mot français manquant
+        this.audioService.speak(currentWord.french_text, 'fr-FR');
+      }
     }
   }
 
