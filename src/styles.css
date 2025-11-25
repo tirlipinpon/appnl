@@ -1,1 +1,44 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* Styles pour le tooltip de traduction */
+.translation-tooltip {
+  position: fixed;
+  background: #2c3e50;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 10000;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-width: 300px;
+  word-wrap: break-word;
+  animation: fadeInTooltip 0.2s ease-in;
+  user-select: none;
+  line-height: 1.4;
+}
+
+.translation-tooltip-error {
+  background: #e74c3c;
+}
+
+@keyframes fadeInTooltip {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive : ajuster sur petits écrans */
+@media (max-width: 768px) {
+  .translation-tooltip {
+    max-width: 250px;
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+}

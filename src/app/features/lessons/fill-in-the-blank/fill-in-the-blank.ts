@@ -8,10 +8,11 @@ import { AuthService } from '../../../core/services/auth.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { AudioService } from '../../../core/services/audio.service';
 import { LessonService } from '../../../core/services/lesson.service';
+import { TextSelectionDirective } from '../../../shared/directives/text-selection.directive';
 
 @Component({
   selector: 'app-fill-in-the-blank',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TextSelectionDirective],
   templateUrl: './fill-in-the-blank.html',
   styleUrl: './fill-in-the-blank.css',
 })

@@ -6,7 +6,13 @@
   <div *ngIf="!isLoading && currentSentence" class="fill-in-blank-content">
     <div class="question-section">
       <div class="sentence-text-wrapper">
-        <div class="sentence-text">{{ getSentenceWithBlank() }}</div>
+        <div 
+          class="sentence-text"
+          appTextSelection
+          [textSelectionEnabled]="!showResult"
+          [translationDirection]="direction === 'dutch_to_french' ? 'fr' : 'nl'"
+          [sourceLanguage]="direction === 'dutch_to_french' ? 'nl' : 'fr'"
+        >{{ getSentenceWithBlank() }}</div>
         <button 
           class="audio-btn" 
           (click)="playAudio()" 
