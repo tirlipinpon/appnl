@@ -4,6 +4,7 @@ import { SupabaseService } from './supabase.service';
 export interface FillInTheBlankSentence {
   sentence: string;
   missingWord: string;
+  translation?: string; // Traduction complète de la phrase
 }
 
 @Injectable({
@@ -29,16 +30,20 @@ export class DeepSeekService {
     word: string,
     direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french',
     existingSentences: string[] = [],
-    frenchTranslation?: string
+    frenchTranslation?: string,
+    context?: string
   ): Promise<FillInTheBlankSentence> {
     // 1. Vérifier si une phrase existe déjà dans la DB
     const storedSentence = await this.getStoredSentence(wordId, direction);
     
     if (storedSentence) {
       // Utiliser la phrase de la DB
+      // Récupérer aussi la traduction si elle existe
+      const storedTranslation = await this.getStoredTranslation(wordId, direction);
       return {
         sentence: storedSentence,
-        missingWord: word
+        missingWord: word,
+        translation: storedTranslation || undefined
       };
     }
     
@@ -46,13 +51,16 @@ export class DeepSeekService {
     const newSentence = await this.generateFillInTheBlankSentence(
       word,
       existingSentences,
-      undefined,
+      context,
       direction,
       frenchTranslation
     );
     
     // 3. Enregistrer la phrase dans la DB pour réutilisation future
     await this.saveSentenceToDatabase(wordId, newSentence.sentence, direction);
+    if (newSentence.translation) {
+      await this.saveTranslationToDatabase(wordId, newSentence.translation, direction);
+    }
     
     return newSentence;
   }
@@ -87,7 +95,7 @@ export class DeepSeekService {
           messages: [
             {
               role: 'system',
-              content: 'Tu es un assistant qui crée des exercices de langue néerlandaise. Tu génères des phrases à trous où l\'utilisateur doit écrire le mot manquant.'
+              content: 'Tu es un assistant qui crée des exercices de langue de niveau B1 (intermédiaire). Tu génères des phrases complexes et grammaticalement correctes avec des structures avancées (subordonnées, temps composés, voix passive, etc.) où l\'utilisateur doit écrire le mot manquant.'
             },
             {
               role: 'user',
@@ -126,7 +134,7 @@ export class DeepSeekService {
     frenchTranslation?: string
   ): string {
     const language = direction === 'dutch_to_french' ? 'néerlandais' : 'français';
-    let prompt = `Crée une phrase SIMPLE et ÉVIDENTE en ${language} qui utilise le mot "${word}". `;
+    let prompt = `Crée une phrase CORRECTE et COMPLEXE de niveau B1 en ${language} qui utilise le mot "${word}". `;
     
     // Ajouter la traduction française pour clarifier le contexte quand on génère une phrase en néerlandais
     if (direction === 'dutch_to_french' && frenchTranslation) {
@@ -137,27 +145,36 @@ export class DeepSeekService {
       prompt += `Contexte: ${context}. `;
     }
     
-    prompt += `La phrase doit être TRÈS SIMPLE et ÉVIDENTE pour un exercice de niveau moyen. `;
-    prompt += `Le mot manquant doit être facile à deviner grâce au contexte de la phrase. `;
+    prompt += `La phrase doit être de NIVEAU B1 (intermédiaire), donc PLUS COMPLEXE qu'une phrase simple. `;
+    prompt += `Utilise des structures grammaticales avancées : subordonnées (parce que, bien que, quand, si), temps composés, voix passive, pronoms relatifs, etc. `;
+    prompt += `La phrase doit être grammaticalement CORRECTE et naturelle. `;
+    prompt += `Le mot manquant doit être logique dans le contexte de la phrase complexe. `;
     
     if (existingSentences.length > 0) {
       prompt += `\n\nVoici des phrases déjà utilisées pour ce mot (NE PAS les répéter, créer quelque chose de différent) :\n`;
       existingSentences.forEach((sentence, index) => {
         prompt += `${index + 1}. ${sentence}\n`;
       });
-      prompt += `\nCrée une phrase COMPLÈTEMENT DIFFÉRENTE de celles-ci. `;
+      prompt += `\nCrée une phrase COMPLÈTEMENT DIFFÉRENTE et PLUS COMPLEXE que celles-ci. `;
     }
     
     prompt += `\nRéponds UNIQUEMENT au format JSON suivant (sans texte supplémentaire) :\n`;
     prompt += `{\n`;
     prompt += `  "sentence": "phrase avec [MOT] à la place du mot manquant",\n`;
-    prompt += `  "missingWord": "${word}"\n`;
+    prompt += `  "missingWord": "${word}",\n`;
+    prompt += `  "translation": "traduction complète de la phrase en ${direction === 'dutch_to_french' ? 'français' : 'néerlandais'}"\n`;
     prompt += `}\n`;
-    prompt += `\nExemples de phrases simples et évidentes :\n`;
-    prompt += `- Si le mot est "groen" (vert) : "De gras is [MOT] in de tuin." (L'herbe est [MOT] dans le jardin)\n`;
-    prompt += `- Si le mot est "boek" (livre) : "Ik lees een [MOT]." (Je lis un [MOT])\n`;
-    prompt += `- Si le mot est "water" (eau) : "Ik drink [MOT]." (Je bois [MOT])\n`;
-    prompt += `\nLa phrase doit être courte (maximum 8-10 mots), simple et le contexte doit rendre le mot évident.`;
+    prompt += `\nExemples de phrases complexes niveau B1 :\n`;
+    if (direction === 'dutch_to_french') {
+      prompt += `- Si le mot est "groen" (vert) : "Hoewel het regent, blijft het gras [MOT] omdat het veel zon heeft gehad." (Bien qu'il pleuve, l'herbe reste [MOT] car elle a eu beaucoup de soleil)\n`;
+      prompt += `- Si le mot est "boek" (livre) : "Het [MOT] dat ik gisteren heb gekocht, is interessanter dan ik had verwacht." (Le [MOT] que j'ai acheté hier est plus intéressant que je ne l'avais prévu)\n`;
+      prompt += `- Si le mot est "water" (eau) : "Als je dorst hebt, kun je beter [MOT] drinken dan frisdrank." (Si tu as soif, tu ferais mieux de boire [MOT] plutôt que des sodas)\n`;
+    } else {
+      prompt += `- Si le mot est "vert" : "Bien que la pluie tombe, l'herbe reste [MOT] car elle a reçu beaucoup de soleil." (Hoewel het regent, blijft het gras [MOT] omdat het veel zon heeft gehad)\n`;
+      prompt += `- Si le mot est "livre" : "Le [MOT] que j'ai acheté hier est plus intéressant que je ne l'avais prévu." (Het [MOT] dat ik gisteren heb gekocht, is interessanter dan ik had verwacht)\n`;
+      prompt += `- Si le mot est "eau" : "Si tu as soif, tu ferais mieux de boire [MOT] plutôt que des sodas." (Als je dorst hebt, kun je beter [MOT] drinken dan frisdrank)\n`;
+    }
+    prompt += `\nLa phrase doit être de longueur moyenne (10-15 mots), complexe niveau B1, grammaticalement correcte et le contexte doit rendre le mot logique.`;
     
     return prompt;
   }
@@ -180,7 +197,8 @@ export class DeepSeekService {
         
         return {
           sentence,
-          missingWord: parsed.missingWord || correctWord
+          missingWord: parsed.missingWord || correctWord,
+          translation: parsed.translation || undefined
         };
       }
       
@@ -195,18 +213,19 @@ export class DeepSeekService {
   private createFallbackSentence(word: string): FillInTheBlankSentence {
     // Phrases simples de fallback
     const fallbackSentences = [
-      `De gras is [MOT] in de tuin.`,
-      `Ik zie een [MOT] auto.`,
-      `Het boek is [MOT].`,
-      `Ik heb een [MOT] pen.`
+      { sentence: `De gras is [MOT] in de tuin.`, translation: `L'herbe est [MOT] dans le jardin.` },
+      { sentence: `Ik zie een [MOT] auto.`, translation: `Je vois une voiture [MOT].` },
+      { sentence: `Het boek is [MOT].`, translation: `Le livre est [MOT].` },
+      { sentence: `Ik heb een [MOT] pen.`, translation: `J'ai un stylo [MOT].` }
     ];
     
-    const sentence = fallbackSentences[Math.floor(Math.random() * fallbackSentences.length)]
-      .replace('[MOT]', '_____');
+    const fallback = fallbackSentences[Math.floor(Math.random() * fallbackSentences.length)];
+    const sentence = fallback.sentence.replace('[MOT]', '_____');
     
     return {
       sentence,
-      missingWord: word
+      missingWord: word,
+      translation: fallback.translation.replace('[MOT]', word)
     };
   }
 
@@ -314,6 +333,86 @@ export class DeepSeekService {
       }
     } catch (error) {
       console.error('Error saving sentence:', error);
+    }
+  }
+
+  /**
+   * Récupère la traduction stockée dans la DB pour un mot selon la direction
+   */
+  private async getStoredTranslation(
+    wordId: string, 
+    direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french'
+  ): Promise<string | null> {
+    try {
+      const columnName = direction === 'dutch_to_french' 
+        ? 'fill_in_blank_sentence_translation' 
+        : 'fill_in_blank_sentence_fr_translation';
+      
+      const { data, error } = await this.supabaseService.client
+        .from('nlapp_words')
+        .select(columnName)
+        .eq('id', wordId)
+        .single();
+      
+      if (error) {
+        // Si la colonne n'existe pas encore, retourner null (pas d'erreur)
+        if (error.code === '42703' || error.code === 'PGRST204') {
+          return null;
+        }
+        console.error('Error fetching translation:', error);
+        return null;
+      }
+      
+      if (!data) {
+        return null;
+      }
+      
+      const translation = (data as any)[columnName];
+      if (translation && translation.trim()) {
+        return translation;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching stored translation:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Enregistre la traduction dans la DB pour réutilisation future
+   */
+  private async saveTranslationToDatabase(
+    wordId: string, 
+    translation: string,
+    direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french'
+  ): Promise<void> {
+    try {
+      const columnName = direction === 'dutch_to_french' 
+        ? 'fill_in_blank_sentence_translation' 
+        : 'fill_in_blank_sentence_fr_translation';
+      
+      const updateData = { [columnName]: translation };
+      
+      console.log(`Sauvegarde traduction ${direction === 'dutch_to_french' ? 'française' : 'néerlandaise'} dans ${columnName} pour wordId: ${wordId}`);
+      
+      const { data, error } = await this.supabaseService.client
+        .from('nlapp_words')
+        .update(updateData)
+        .eq('id', wordId)
+        .select();
+      
+      if (error) {
+        // Si la colonne n'existe pas encore, juste logger (ne pas bloquer)
+        if (error.code === '42703' || error.code === 'PGRST204') {
+          console.warn(`⚠️ La colonne ${columnName} n'existe pas encore dans la base de données. La traduction ne sera pas sauvegardée.`);
+          return;
+        }
+        console.error('Error saving translation to database:', error);
+      } else {
+        console.log(`Traduction sauvegardée avec succès pour wordId: ${wordId}`);
+      }
+    } catch (error) {
+      console.error('Error saving translation:', error);
     }
   }
 

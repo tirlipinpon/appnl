@@ -6,6 +6,7 @@ import { ProgressService } from '../../../core/services/progress.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { AudioService } from '../../../core/services/audio.service';
+import { LessonService } from '../../../core/services/lesson.service';
 
 interface WordItem {
   text: string;
@@ -23,7 +24,11 @@ export class ReorderSentence implements OnInit {
   private progressService = inject(ProgressService);
   private authService = inject(AuthService);
   private supabaseService = inject(SupabaseService);
+  private lessonService = inject(LessonService);
   audioService = inject(AudioService);
+  
+  // Cache pour les descriptions de leçons
+  private lessonDescriptions: Map<string, string> = new Map();
 
   @Input() words: Word[] = [];
   @Input() direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
@@ -137,6 +142,9 @@ export class ReorderSentence implements OnInit {
     // Créer une promesse pour charger cette phrase
     const promise = (async () => {
       try {
+        // Récupérer le contexte (description de la leçon)
+        const context = await this.getLessonDescription(word.lesson_id);
+        
         let sentence: FillInTheBlankSentence;
         
         if (this.direction === 'dutch_to_french') {
@@ -146,7 +154,8 @@ export class ReorderSentence implements OnInit {
             word.dutch_text,
             'dutch_to_french',
             [],
-            word.french_text
+            word.french_text,
+            context
           );
         } else {
           // Phrase en français
@@ -154,7 +163,9 @@ export class ReorderSentence implements OnInit {
             word.id,
             word.french_text,
             'french_to_dutch',
-            []
+            [],
+            undefined,
+            context
           );
         }
         
@@ -202,7 +213,10 @@ export class ReorderSentence implements OnInit {
     if (!this.currentSentence) return;
 
     // Reconstruire la phrase complète en remplaçant "_____" par le mot manquant
-    const completeSentence = this.currentSentence.sentence.replace(/_____/g, this.currentSentence.missingWord);
+    let completeSentence = this.currentSentence.sentence.replace(/_____/g, this.currentSentence.missingWord);
+    
+    // Supprimer le dernier point s'il existe
+    completeSentence = completeSentence.trim().replace(/\.$/, '');
     
     const words = this.splitSentenceIntoWords(completeSentence);
     this.correctOrder = words.map(w => this.normalizeWord(w));
@@ -472,6 +486,38 @@ export class ReorderSentence implements OnInit {
         // Phrase en français
         this.audioService.speak(completeSentence, 'fr-FR');
       }
+    }
+  }
+
+  /**
+   * Joue l'audio de la traduction en français
+   */
+  playTranslationAudio() {
+    if (this.currentSentence?.translation && this.audioService.isSupported()) {
+      // Lire la traduction en français
+      this.audioService.speak(this.currentSentence.translation, 'fr-FR');
+    }
+  }
+
+  /**
+   * Récupère la description de la leçon (contexte) pour un mot
+   */
+  private async getLessonDescription(lessonId: string): Promise<string | undefined> {
+    // Vérifier le cache d'abord
+    if (this.lessonDescriptions.has(lessonId)) {
+      return this.lessonDescriptions.get(lessonId);
+    }
+    
+    try {
+      const lesson = await this.lessonService.getLessonById(lessonId);
+      const description = lesson?.description;
+      if (description) {
+        this.lessonDescriptions.set(lessonId, description);
+      }
+      return description;
+    } catch (error) {
+      console.error('Error fetching lesson description:', error);
+      return undefined;
     }
   }
 

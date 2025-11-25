@@ -318,15 +318,10 @@ export class FrenchWriting implements OnInit, AfterViewInit, OnChanges {
 
   playAudio(): void {
     if (!this.currentWord) return;
-    // Lire le texte selon la direction
-    if (this.direction === 'french_to_dutch') {
-      if (this.currentWord.french_text) {
-        this.audioService.speak(this.currentWord.french_text, 'fr-FR');
-      }
-    } else {
-      if (this.currentWord.dutch_text) {
-        this.audioService.speak(this.currentWord.dutch_text, 'nl-NL');
-      }
+    // Toujours lire le néerlandais (la langue à apprendre)
+    // Peu importe la direction, on apprend toujours le néerlandais
+    if (this.currentWord.dutch_text) {
+      this.audioService.speak(this.currentWord.dutch_text, 'nl-NL');
     }
   }
 }

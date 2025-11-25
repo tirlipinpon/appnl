@@ -7,6 +7,7 @@ import { ProgressService } from '../../../core/services/progress.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { AudioService } from '../../../core/services/audio.service';
+import { LessonService } from '../../../core/services/lesson.service';
 
 @Component({
   selector: 'app-fill-in-the-blank',
@@ -19,7 +20,11 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
   private progressService = inject(ProgressService);
   private authService = inject(AuthService);
   private supabaseService = inject(SupabaseService);
+  private lessonService = inject(LessonService);
   audioService = inject(AudioService);
+  
+  // Cache pour les descriptions de leçons
+  private lessonDescriptions: Map<string, string> = new Map();
 
   @Input() words: Word[] = [];
   @Input() direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
@@ -128,6 +133,9 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
     // Créer une promesse pour charger cette phrase
     const promise = (async () => {
       try {
+        // Récupérer le contexte (description de la leçon)
+        const context = await this.getLessonDescription(word.lesson_id);
+        
         let sentence: FillInTheBlankSentence;
         
         if (this.direction === 'dutch_to_french') {
@@ -138,7 +146,8 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
             word.dutch_text,
             'dutch_to_french',
             [],
-            word.french_text
+            word.french_text,
+            context
           );
         } else {
           // Phrase en français avec mot français manquant
@@ -146,7 +155,9 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
             word.id,
             word.french_text,
             'french_to_dutch',
-            []
+            [],
+            undefined,
+            context
           );
         }
         
@@ -185,6 +196,28 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
       this.loadSentenceForIndex(i).catch(error => {
         console.error(`Error preloading sentence ${i}:`, error);
       });
+    }
+  }
+
+  /**
+   * Récupère la description de la leçon (contexte) pour un mot
+   */
+  private async getLessonDescription(lessonId: string): Promise<string | undefined> {
+    // Vérifier le cache d'abord
+    if (this.lessonDescriptions.has(lessonId)) {
+      return this.lessonDescriptions.get(lessonId);
+    }
+    
+    try {
+      const lesson = await this.lessonService.getLessonById(lessonId);
+      const description = lesson?.description;
+      if (description) {
+        this.lessonDescriptions.set(lessonId, description);
+      }
+      return description;
+    } catch (error) {
+      console.error('Error fetching lesson description:', error);
+      return undefined;
     }
   }
 
@@ -329,16 +362,27 @@ export class FillInTheBlank implements OnInit, AfterViewInit {
   }
 
   playAudio(): void {
-    if (!this.currentSentence) return;
-    // Lire uniquement le mot manquant (le mot à deviner)
-    const missingWord = this.currentSentence.missingWord;
-    
-    if (this.direction === 'dutch_to_french') {
-      // Le mot manquant est en néerlandais
-      this.audioService.speak(missingWord, 'nl-NL');
-    } else {
-      // Le mot manquant est en français
-      this.audioService.speak(missingWord, 'fr-FR');
+    if (this.currentSentence && this.audioService.isSupported()) {
+      // Reconstruire la phrase complète en remplaçant "_____" par le mot manquant
+      const completeSentence = this.currentSentence.sentence.replace(/_____/g, this.currentSentence.missingWord)
+        .replace(/\[MOT\]/gi, this.currentSentence.missingWord)
+        .replace(/\{MOT\}/gi, this.currentSentence.missingWord);
+      
+      // Lire dans la langue selon la direction
+      if (this.direction === 'dutch_to_french') {
+        // Phrase en néerlandais
+        this.audioService.speak(completeSentence, 'nl-NL');
+      } else {
+        // Phrase en français
+        this.audioService.speak(completeSentence, 'fr-FR');
+      }
+    }
+  }
+
+  playTranslationAudio(): void {
+    if (this.currentSentence?.translation && this.audioService.isSupported()) {
+      // Lire la traduction en français
+      this.audioService.speak(this.currentSentence.translation, 'fr-FR');
     }
   }
 

@@ -14,6 +14,18 @@
         >
           🔊
         </button>
+        <button 
+          class="audio-btn audio-btn-french" 
+          (click)="playTranslationAudio()" 
+          *ngIf="audioService.isSupported() && currentSentence?.translation && direction === 'dutch_to_french'"
+          title="Écouter la traduction en français"
+        >
+          🇫🇷
+        </button>
+      </div>
+      <div *ngIf="showResult && isCorrect && currentSentence?.translation && direction === 'dutch_to_french'" class="translation-section">
+        <div class="translation-label">Traduction :</div>
+        <div class="translation-text">{{ currentSentence.translation }}</div>
       </div>
       <div *ngIf="direction === 'french_to_dutch'" class="help-hint">
         <span class="help-label">Aide :</span>

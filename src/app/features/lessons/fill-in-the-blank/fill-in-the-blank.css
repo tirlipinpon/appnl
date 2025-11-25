@@ -146,6 +146,37 @@
   border-color: #5568d3;
 }
 
+.audio-btn-french {
+  background: #28a745;
+  border-color: #28a745;
+}
+
+.audio-btn-french:hover {
+  background: #218838;
+  border-color: #218838;
+}
+
+.translation-section {
+  margin-top: 16px;
+  padding: 16px;
+  background: #e8f5e9;
+  border-radius: 8px;
+  border-left: 4px solid #28a745;
+}
+
+.translation-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #155724;
+  margin-bottom: 8px;
+}
+
+.translation-text {
+  font-size: 18px;
+  color: #155724;
+  font-style: italic;
+}
+
 .input-section {
   display: flex;
   flex-direction: column;
