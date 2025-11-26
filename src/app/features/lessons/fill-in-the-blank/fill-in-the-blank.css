@@ -83,10 +83,18 @@
 
 .sentence-text-wrapper {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.audio-buttons-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .sentence-text {
@@ -259,6 +267,23 @@
   background: #dc3545;
 }
 
+@media (max-width: 768px) {
+  .sentence-text-wrapper {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sentence-text {
+    font-size: 22px;
+    padding: 16px;
+    width: 100%;
+  }
+
+  .audio-btn {
+    align-self: center;
+  }
+}
+
 @media (max-width: 600px) {
   .letter-input {
     width: 40px;
@@ -272,6 +297,15 @@
   
   .letter-input-container {
     gap: 6px;
+  }
+
+  .sentence-text {
+    font-size: 18px;
+    padding: 12px;
+  }
+
+  .fill-in-blank-content {
+    padding: 20px;
   }
 }
 

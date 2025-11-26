@@ -15,12 +15,13 @@ export class TextSelectionDirective implements OnInit, OnDestroy {
 
   private tooltipElement: HTMLElement | null = null;
   private mouseUpListener: ((e: MouseEvent) => void) | null = null;
+  private touchEndListener: ((e: TouchEvent) => void) | null = null;
   private clickListener: (() => void) | null = null;
   private hideTimeout: number | null = null;
   private debounceTimeout: number | null = null;
   private readonly MIN_SELECTION_LENGTH = 2;
   private readonly MAX_SELECTION_LENGTH = 100; // Limite pour éviter les textes trop longs
-  private readonly TOOLTIP_TIMEOUT = 4000; // 4 secondes
+  private readonly TOOLTIP_TIMEOUT = 5000; // 5 secondes (plus long sur mobile)
   private readonly DEBOUNCE_DELAY = 300; // 300ms de debounce
 
   ngOnInit(): void {
@@ -37,7 +38,7 @@ export class TextSelectionDirective implements OnInit, OnDestroy {
    * Attache les listeners d'événements
    */
   private attachListeners(): void {
-    // Listener pour détecter la sélection de texte
+    // Listener pour détecter la sélection de texte (desktop)
     this.mouseUpListener = (e: MouseEvent) => {
       // Ne pas interférer avec le drag & drop
       if ((e.target as HTMLElement)?.draggable === true) {
@@ -50,23 +51,44 @@ export class TextSelectionDirective implements OnInit, OnDestroy {
       }
 
       this.debounceTimeout = window.setTimeout(() => {
-        this.handleTextSelection(e);
+        this.handleTextSelection(e.clientX, e.clientY);
+      }, this.DEBOUNCE_DELAY);
+    };
+
+    // Listener pour détecter la sélection de texte (mobile/touch)
+    this.touchEndListener = (e: TouchEvent) => {
+      // Ne pas interférer avec le drag & drop
+      if ((e.target as HTMLElement)?.draggable === true) {
+        return;
+      }
+
+      // Debounce pour éviter trop d'appels
+      if (this.debounceTimeout !== null) {
+        clearTimeout(this.debounceTimeout);
+      }
+
+      // Utiliser les coordonnées du dernier touch
+      const lastTouch = e.changedTouches[e.changedTouches.length - 1];
+      this.debounceTimeout = window.setTimeout(() => {
+        this.handleTextSelection(lastTouch.clientX, lastTouch.clientY);
       }, this.DEBOUNCE_DELAY);
     };
 
     this.elementRef.nativeElement.addEventListener('mouseup', this.mouseUpListener);
+    this.elementRef.nativeElement.addEventListener('touchend', this.touchEndListener, { passive: true });
 
-    // Listener global pour masquer le tooltip au clic ailleurs
+    // Listener global pour masquer le tooltip au clic/touch ailleurs
     this.clickListener = () => {
       this.hideTooltip();
     };
     document.addEventListener('click', this.clickListener);
+    document.addEventListener('touchend', this.clickListener, { passive: true });
   }
 
   /**
    * Gère la sélection de texte
    */
-  private async handleTextSelection(event: MouseEvent): Promise<void> {
+  private async handleTextSelection(clientX: number, clientY: number): Promise<void> {
     const selection = window.getSelection();
     
     if (!selection || selection.toString().trim().length < this.MIN_SELECTION_LENGTH) {
@@ -110,7 +132,7 @@ export class TextSelectionDirective implements OnInit, OnDestroy {
       );
 
       // Afficher le tooltip avec la traduction
-      this.showTooltip(translation, event);
+      this.showTooltip(translation, clientX, clientY);
     } catch (error: any) {
       console.error('[TextSelectionDirective] Erreur lors de la traduction:', error);
       // Afficher le message d'erreur spécifique si disponible
@@ -119,14 +141,14 @@ export class TextSelectionDirective implements OnInit, OnDestroy {
       const displayMessage = errorMessage.length > 80 
         ? errorMessage.substring(0, 77) + '...' 
         : errorMessage;
-      this.showTooltip(displayMessage, event, true);
+      this.showTooltip(displayMessage, clientX, clientY, true);
     }
   }
 
   /**
    * Affiche le tooltip avec la traduction
    */
-  private showTooltip(translation: string, event: MouseEvent, isError: boolean = false): void {
+  private showTooltip(translation: string, clientX: number, clientY: number, isError: boolean = false): void {
     // Masquer l'ancien tooltip s'il existe
     this.hideTooltip();
 
@@ -140,8 +162,6 @@ export class TextSelectionDirective implements OnInit, OnDestroy {
     
     // Styles inline pour le positionnement
     tooltip.style.position = 'fixed';
-    tooltip.style.left = `${event.clientX + 10}px`;
-    tooltip.style.top = `${event.clientY - 40}px`;
     tooltip.style.zIndex = '10000';
     tooltip.style.pointerEvents = 'none';
 
@@ -149,7 +169,7 @@ export class TextSelectionDirective implements OnInit, OnDestroy {
     this.tooltipElement = tooltip;
 
     // Ajuster la position si le tooltip dépasse de l'écran
-    this.adjustTooltipPosition(tooltip, event);
+    this.adjustTooltipPosition(tooltip, clientX, clientY);
 
     // Masquer automatiquement après le timeout
     this.hideTimeout = window.setTimeout(() => {
@@ -160,29 +180,52 @@ export class TextSelectionDirective implements OnInit, OnDestroy {
   /**
    * Ajuste la position du tooltip pour qu'il reste visible
    */
-  private adjustTooltipPosition(tooltip: HTMLElement, event: MouseEvent): void {
+  private adjustTooltipPosition(tooltip: HTMLElement, clientX: number, clientY: number): void {
     const rect = tooltip.getBoundingClientRect();
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
+    const isMobile = windowWidth <= 768;
 
-    // Ajuster horizontalement si dépasse à droite
-    if (rect.right > windowWidth) {
-      tooltip.style.left = `${event.clientX - rect.width - 10}px`;
-    }
+    if (isMobile) {
+      // Sur mobile, centrer le tooltip horizontalement et le placer au-dessus de la sélection
+      tooltip.style.left = '50%';
+      tooltip.style.transform = 'translateX(-50%)';
+      tooltip.style.right = 'auto';
+      
+      // Placer le tooltip au-dessus de la sélection avec un peu de marge
+      const tooltipHeight = rect.height || 50; // Estimation si pas encore rendu
+      const topPosition = Math.max(10, clientY - tooltipHeight - 20);
+      tooltip.style.top = `${topPosition}px`;
+      
+      // Si le tooltip dépasse en haut, le placer en bas
+      if (topPosition < 10) {
+        tooltip.style.top = `${Math.min(clientY + 30, windowHeight - tooltipHeight - 10)}px`;
+      }
+    } else {
+      // Sur desktop, positionner près du curseur
+      tooltip.style.left = `${clientX + 10}px`;
+      tooltip.style.top = `${clientY - 40}px`;
+      tooltip.style.transform = 'none';
+      
+      // Ajuster horizontalement si dépasse à droite
+      if (rect.right > windowWidth) {
+        tooltip.style.left = `${clientX - rect.width - 10}px`;
+      }
 
-    // Ajuster horizontalement si dépasse à gauche
-    if (rect.left < 0) {
-      tooltip.style.left = '10px';
-    }
+      // Ajuster horizontalement si dépasse à gauche
+      if (rect.left < 0) {
+        tooltip.style.left = '10px';
+      }
 
-    // Ajuster verticalement si dépasse en haut
-    if (rect.top < 0) {
-      tooltip.style.top = `${event.clientY + 20}px`;
-    }
+      // Ajuster verticalement si dépasse en haut
+      if (rect.top < 0) {
+        tooltip.style.top = `${clientY + 20}px`;
+      }
 
-    // Ajuster verticalement si dépasse en bas
-    if (rect.bottom > windowHeight) {
-      tooltip.style.top = `${windowHeight - rect.height - 10}px`;
+      // Ajuster verticalement si dépasse en bas
+      if (rect.bottom > windowHeight) {
+        tooltip.style.top = `${windowHeight - rect.height - 10}px`;
+      }
     }
   }
 
@@ -217,8 +260,14 @@ export class TextSelectionDirective implements OnInit, OnDestroy {
       this.mouseUpListener = null;
     }
 
+    if (this.touchEndListener) {
+      this.elementRef.nativeElement.removeEventListener('touchend', this.touchEndListener);
+      this.touchEndListener = null;
+    }
+
     if (this.clickListener) {
       document.removeEventListener('click', this.clickListener);
+      document.removeEventListener('touchend', this.clickListener);
       this.clickListener = null;
     }
   }

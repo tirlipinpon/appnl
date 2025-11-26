@@ -366,6 +366,35 @@ export class FillInTheBlank implements OnInit, AfterViewInit, OnDestroy {
       : currentWord.french_text;
   }
 
+  /**
+   * Retourne la traduction complète avec le mot manquant rempli
+   */
+  getCompleteTranslation(): string {
+    if (!this.currentSentence?.translation) return '';
+    
+    const currentWord = this.words[this.currentIndex];
+    if (!currentWord) return this.currentSentence.translation;
+    
+    // Remplacer le "_____" par le mot français manquant
+    let translation = this.currentSentence.translation;
+    
+    if (this.direction === 'dutch_to_french') {
+      // Le mot manquant est le mot français
+      translation = translation
+        .replace(/_____/g, currentWord.french_text)
+        .replace(/\[MOT\]/gi, currentWord.french_text)
+        .replace(/\{MOT\}/gi, currentWord.french_text);
+    } else {
+      // Le mot manquant est le mot néerlandais
+      translation = translation
+        .replace(/_____/g, currentWord.dutch_text)
+        .replace(/\[MOT\]/gi, currentWord.dutch_text)
+        .replace(/\{MOT\}/gi, currentWord.dutch_text);
+    }
+    
+    return translation;
+  }
+
   playAudio(): void {
     if (this.currentSentence && this.audioService.isSupported()) {
       // Reconstruire la phrase complète en remplaçant "_____" par le mot manquant

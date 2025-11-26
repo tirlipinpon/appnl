@@ -37,8 +37,13 @@
 /* Responsive : ajuster sur petits écrans */
 @media (max-width: 768px) {
   .translation-tooltip {
-    max-width: 250px;
-    font-size: 13px;
-    padding: 6px 10px;
+    max-width: calc(100vw - 40px);
+    width: auto;
+    min-width: 200px;
+    font-size: 14px;
+    padding: 10px 14px;
+    margin: 0 20px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 }
