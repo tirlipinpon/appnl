@@ -33,6 +33,7 @@ export class Quiz implements OnInit {
   showResult = false;
   isCorrect = false;
   score = { correct: 0, total: 0 };
+  selectedWordTranslation: string = ''; // Traduction du mot cliqué si incorrect
 
   async ngOnInit() {
     if (this.words.length > 0) {
@@ -49,6 +50,7 @@ export class Quiz implements OnInit {
     this.currentWord = this.words[this.currentIndex];
     this.showResult = false;
     this.selectedAnswer = '';
+    this.selectedWordTranslation = '';
 
     if (this.direction === 'french_to_dutch') {
       this.correctAnswer = this.currentWord.dutch_text;
@@ -71,8 +73,20 @@ export class Quiz implements OnInit {
     return shuffled;
   }
 
+  // Stocker les mots correspondants aux choix pour pouvoir afficher les traductions
+  choicesWords: Map<string, Word> = new Map();
+
   async generateChoices(correct: string) {
     const excludeIds = this.words.map(w => w.id);
+    this.choicesWords.clear();
+    
+    // Stocker le mot correct
+    if (this.currentWord) {
+      const correctText = this.direction === 'french_to_dutch' 
+        ? this.currentWord.dutch_text 
+        : this.currentWord.french_text;
+      this.choicesWords.set(correctText, this.currentWord);
+    }
     
     // Sélectionner des mots similaires de la DB au lieu de mots complètement aléatoires
     const similarWords = await this.wordService.getSimilarWords(
@@ -82,9 +96,12 @@ export class Quiz implements OnInit {
       this.direction
     );
     
-    const wrongAnswers = similarWords.map(w => 
-      this.direction === 'french_to_dutch' ? w.dutch_text : w.french_text
-    );
+    const wrongAnswers: string[] = [];
+    similarWords.forEach(w => {
+      const answerText = this.direction === 'french_to_dutch' ? w.dutch_text : w.french_text;
+      wrongAnswers.push(answerText);
+      this.choicesWords.set(answerText, w);
+    });
 
     // Si on n'a pas assez de mots similaires dans la DB, compléter avec des mots aléatoires
     if (wrongAnswers.length < 3) {
@@ -92,10 +109,11 @@ export class Quiz implements OnInit {
         3 - wrongAnswers.length, 
         [...excludeIds, ...similarWords.map(w => w.id)]
       );
-      const additionalAnswers = randomWords.map(w => 
-        this.direction === 'french_to_dutch' ? w.dutch_text : w.french_text
-      );
-      wrongAnswers.push(...additionalAnswers);
+      randomWords.forEach(w => {
+        const answerText = this.direction === 'french_to_dutch' ? w.dutch_text : w.french_text;
+        wrongAnswers.push(answerText);
+        this.choicesWords.set(answerText, w);
+      });
     }
 
     // Mélanger les choix de manière aléatoire avec Fisher-Yates
@@ -110,6 +128,21 @@ export class Quiz implements OnInit {
     this.isCorrect = answer === this.correctAnswer;
     this.showResult = true;
     this.score.total++;
+
+    // Si la réponse est incorrecte, trouver la traduction du mot cliqué
+    if (!this.isCorrect) {
+      const selectedWord = this.choicesWords.get(answer);
+      if (selectedWord) {
+        // Afficher la traduction du mot cliqué
+        this.selectedWordTranslation = this.direction === 'french_to_dutch' 
+          ? selectedWord.french_text 
+          : selectedWord.dutch_text;
+      } else {
+        this.selectedWordTranslation = '';
+      }
+    } else {
+      this.selectedWordTranslation = '';
+    }
 
     if (this.isCorrect) {
       this.score.correct++;

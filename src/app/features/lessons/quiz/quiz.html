@@ -14,17 +14,27 @@
     </div>
 
     <div class="choices-section">
-      <button
+      <div
         *ngFor="let choice of choices"
-        class="choice-btn"
-        [class.selected]="selectedAnswer === choice"
-        [class.correct]="showResult && choice === correctAnswer"
-        [class.incorrect]="showResult && selectedAnswer === choice && !isCorrect"
-        [disabled]="showResult"
-        (click)="selectAnswer(choice)"
+        class="choice-wrapper"
       >
-        {{ choice }}
-      </button>
+        <button
+          class="choice-btn"
+          [class.selected]="selectedAnswer === choice"
+          [class.correct]="showResult && choice === correctAnswer"
+          [class.incorrect]="showResult && selectedAnswer === choice && !isCorrect"
+          [disabled]="showResult"
+          (click)="selectAnswer(choice)"
+        >
+          {{ choice }}
+        </button>
+        <div 
+          *ngIf="showResult && selectedAnswer === choice && !isCorrect && selectedWordTranslation"
+          class="choice-translation"
+        >
+          {{ selectedWordTranslation }}
+        </div>
+      </div>
     </div>
 
     <div class="navigation-buttons">
@@ -46,6 +56,15 @@
     <div *ngIf="showResult" class="result-section">
       <div class="score">
         Score : {{ score.correct }} / {{ score.total }}
+      </div>
+
+      <!-- Afficher le résultat de la réponse -->
+      <div *ngIf="isCorrect" class="result-message correct-message">
+        ✓ Correct ! La bonne réponse est : <strong>{{ correctAnswer }}</strong>
+      </div>
+
+      <div *ngIf="!isCorrect" class="result-message incorrect-message">
+        ✗ Incorrect. La bonne réponse est : <strong>{{ correctAnswer }}</strong>
       </div>
 
       <div *ngIf="currentIndex === words.length - 1" class="completion-actions">
