@@ -645,5 +645,265 @@ export class DeepSeekService {
       };
     }
   }
+
+  /**
+   * Extrait les mots de vocabulaire importants d'un texte néerlandais
+   * Exclut les stopwords et retourne les mots avec leurs traductions françaises
+   */
+  async extractVocabularyWords(text: string): Promise<{ dutch: string; french: string }[]> {
+    try {
+      const prompt = `Analyse ce texte néerlandais et extrais uniquement les mots de vocabulaire importants (noms, verbes, adjectifs, adverbes).
+Exclus les articles (de, het, een), prépositions (van, in, op, te, voor, met), pronoms (ik, jij, hij, zij, wij, jullie, zij), 
+conjonctions (en, maar, of, want), et mots grammaticaux courants (is, zijn, heeft, wordt, etc.).
+
+Pour chaque mot extrait, fournis sa traduction française principale.
+
+Retourne un JSON avec ce format :
+{
+  "words": [
+    {"dutch": "woord", "french": "mot"},
+    ...
+  ]
+}
+
+Texte à analyser :
+${text}`;
+
+      // Créer un AbortController pour le timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // Timeout de 30 secondes
+
+      try {
+        const response = await fetch(this.apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [
+              {
+                role: 'system',
+                content: 'Tu es un assistant qui extrait le vocabulaire important de textes néerlandais pour l\'apprentissage. Tu retournes uniquement du JSON valide, sans texte supplémentaire.'
+              },
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            temperature: 0.3,
+            max_tokens: 2000
+          }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const content = data.choices[0]?.message?.content;
+        
+        if (!content) {
+          throw new Error('No content received from API');
+        }
+
+        return this.parseVocabularyExtractionResponse(content);
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        throw fetchError;
+      }
+    } catch (error: any) {
+      console.error('Error extracting vocabulary:', error);
+      if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+        throw new Error('Le délai d\'attente a été dépassé. Veuillez réessayer.');
+      }
+      throw new Error(error.message || 'Erreur lors de l\'extraction des mots');
+    }
+  }
+
+  /**
+   * Parse la réponse JSON de DeepSeek pour l'extraction de vocabulaire
+   */
+  private parseVocabularyExtractionResponse(content: string): { dutch: string; french: string }[] {
+    try {
+      // Nettoyer le contenu étape par étape
+      let cleanedContent = content.trim();
+      
+      // 1. Enlever les markdown code blocks complets
+      cleanedContent = cleanedContent.replace(/```json\s*/gi, '');
+      cleanedContent = cleanedContent.replace(/```\s*/g, '');
+      
+      // 2. Enlever les espaces et sauts de ligne en début/fin
+      cleanedContent = cleanedContent.trim();
+      
+      // 3. Chercher le JSON (peut être au milieu du texte)
+      let jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+      
+      // Si pas trouvé, essayer de trouver juste le tableau words
+      if (!jsonMatch) {
+        const wordsMatch = cleanedContent.match(/\[[\s\S]*\]/);
+        if (wordsMatch) {
+          // Créer un objet JSON avec le tableau words
+          cleanedContent = `{"words": ${wordsMatch[0]}}`;
+          jsonMatch = [cleanedContent];
+        }
+      }
+      
+      if (!jsonMatch || !jsonMatch[0]) {
+        throw new Error('Aucun JSON trouvé dans la réponse');
+      }
+      
+      let jsonString = jsonMatch[0];
+      
+      // 4. Essayer de réparer les chaînes JSON tronquées
+      // Si le JSON se termine par une chaîne incomplète, on essaie de la fermer
+      if (jsonString.match(/"[^"]*$/)) {
+        // Chaîne non fermée à la fin, on la ferme
+        jsonString = jsonString.replace(/("[^"]*)$/, '$1"');
+      }
+      
+      // 6. Nettoyer les virgules en fin de ligne avant les fermetures
+      jsonString = jsonString.replace(/,(\s*[}\]])/g, '$1');
+      
+      // 7. Si le JSON se termine par une virgule suivie d'espaces, l'enlever
+      jsonString = jsonString.replace(/,\s*$/, '');
+      
+      // 8. Essayer de fermer les structures JSON incomplètes
+      const openBraces = (jsonString.match(/\{/g) || []).length;
+      const closeBraces = (jsonString.match(/\}/g) || []).length;
+      const openBrackets = (jsonString.match(/\[/g) || []).length;
+      const closeBrackets = (jsonString.match(/\]/g) || []).length;
+      
+      // Si le JSON se termine par un objet incomplet (ex: "dutch": "mot"), fermer l'objet
+      if (jsonString.match(/"dutch"\s*:\s*"[^"]*"\s*$/)) {
+        jsonString += '}';
+      }
+      
+      // Ajouter les accolades/brackets manquants
+      for (let i = 0; i < openBraces - closeBraces; i++) {
+        jsonString += '}';
+      }
+      for (let i = 0; i < openBrackets - closeBrackets; i++) {
+        jsonString += ']';
+      }
+      
+      // 7. Parser le JSON
+      let parsed: any;
+      try {
+        parsed = JSON.parse(jsonString);
+      } catch (parseError: any) {
+        // Si le parsing échoue, essayer d'extraire les mots directement avec regex
+        console.warn('JSON parsing failed, trying regex extraction:', parseError.message);
+        return this.extractWordsWithRegex(cleanedContent);
+      }
+      
+      // 8. Extraire les mots du JSON parsé
+      if (parsed.words && Array.isArray(parsed.words)) {
+        const words = parsed.words
+          .filter((w: any) => w && w.dutch && w.french)
+          .map((w: any) => ({
+            dutch: String(w.dutch).trim(),
+            french: String(w.french).trim()
+          }))
+          .filter((w: { dutch: string; french: string }) => w.dutch && w.french);
+        
+        if (words.length > 0) {
+          return words;
+        }
+      }
+      
+      // Si pas de words dans le JSON, essayer regex
+      return this.extractWordsWithRegex(cleanedContent);
+      
+    } catch (error: any) {
+      console.error('Error parsing vocabulary extraction response:', error);
+      console.error('Original content:', content);
+      
+      // Dernière tentative : extraction avec regex
+      try {
+        return this.extractWordsWithRegex(content);
+      } catch (regexError) {
+        throw new Error('Impossible de parser la réponse de l\'IA. Veuillez réessayer.');
+      }
+    }
+  }
+
+  /**
+   * Extrait les mots avec des expressions régulières en cas d'échec du parsing JSON
+   */
+  private extractWordsWithRegex(content: string): { dutch: string; french: string }[] {
+    const words: { dutch: string; french: string }[] = [];
+    const seen = new Set<string>(); // Pour éviter les doublons
+    
+    // Pattern 1 : {"dutch": "...", "french": "..."} (objet complet)
+    const pattern1 = /\{\s*"dutch"\s*:\s*"([^"]+)"\s*,\s*"french"\s*:\s*"([^"]+)"\s*\}/g;
+    let match;
+    
+    while ((match = pattern1.exec(content)) !== null) {
+      const dutch = match[1].trim();
+      const french = match[2].trim();
+      const key = `${dutch.toLowerCase()}_${french.toLowerCase()}`;
+      if (dutch && french && !seen.has(key)) {
+        words.push({ dutch, french });
+        seen.add(key);
+      }
+    }
+    
+    // Pattern 2 : "dutch": "..." suivi de "french": "..." (peut être sur plusieurs lignes)
+    if (words.length === 0) {
+      const pattern2 = /"dutch"\s*:\s*"([^"]+)"[\s\S]{0,500}?"french"\s*:\s*"([^"]+)"/g;
+      while ((match = pattern2.exec(content)) !== null) {
+        const dutch = match[1].trim();
+        const french = match[2].trim();
+        const key = `${dutch.toLowerCase()}_${french.toLowerCase()}`;
+        if (dutch && french && !seen.has(key)) {
+          words.push({ dutch, french });
+          seen.add(key);
+        }
+      }
+    }
+    
+    // Pattern 3 : Extraire tous les couples dutch/french même si mal formatés
+    // Chercher toutes les occurrences de "dutch" et "french" proches
+    if (words.length === 0) {
+      const dutchMatches: Array<{ value: string; index: number }> = [];
+      const frenchMatches: Array<{ value: string; index: number }> = [];
+      
+      // Trouver tous les "dutch": "..."
+      const dutchPattern = /"dutch"\s*:\s*"([^"]+)"/g;
+      while ((match = dutchPattern.exec(content)) !== null) {
+        dutchMatches.push({ value: match[1].trim(), index: match.index });
+      }
+      
+      // Trouver tous les "french": "..."
+      const frenchPattern = /"french"\s*:\s*"([^"]+)"/g;
+      while ((match = frenchPattern.exec(content)) !== null) {
+        frenchMatches.push({ value: match[1].trim(), index: match.index });
+      }
+      
+      // Associer chaque dutch avec le french suivant le plus proche
+      for (let i = 0; i < dutchMatches.length; i++) {
+        const dutch = dutchMatches[i];
+        // Chercher le french suivant (dans les 2000 caractères suivants)
+        const nextFrench = frenchMatches.find(f => 
+          f.index > dutch.index && f.index < dutch.index + 2000
+        );
+        
+        if (nextFrench) {
+          const key = `${dutch.value.toLowerCase()}_${nextFrench.value.toLowerCase()}`;
+          if (!seen.has(key)) {
+            words.push({ dutch: dutch.value, french: nextFrench.value });
+            seen.add(key);
+          }
+        }
+      }
+    }
+    
+    return words;
+  }
 }
 

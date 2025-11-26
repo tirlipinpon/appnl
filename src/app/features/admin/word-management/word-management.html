@@ -80,6 +80,127 @@
       </form>
     </div>
 
+    <!-- Section d'import depuis texte -->
+    <div class="form-section">
+      <div class="import-header">
+        <h2>Importer depuis texte</h2>
+        <button 
+          type="button" 
+          class="btn-secondary" 
+          (click)="toggleImportSection()"
+          [class.active]="showImportSection">
+          {{ showImportSection ? 'Masquer' : 'Afficher' }}
+        </button>
+      </div>
+
+      <div class="import-section" [class.expanded]="showImportSection">
+        <div class="import-form">
+          <div class="form-group">
+            <label for="lesson_import">Leçon</label>
+            <select
+              id="lesson_import"
+              [(ngModel)]="selectedLessonForImport"
+              [disabled]="isExtracting"
+              class="form-control">
+              <option value="">Sélectionner une leçon</option>
+              <option *ngFor="let lesson of lessons" [value]="lesson.id">
+                {{ lesson.title }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="import_text">
+              Texte néerlandais à analyser
+              <span class="char-counter" [class.warning]="getRemainingCharacters() < 100">
+                ({{ getRemainingCharacters() }} caractères restants)
+              </span>
+            </label>
+            <textarea
+              id="import_text"
+              [(ngModel)]="importText"
+              [disabled]="isExtracting"
+              [maxlength]="MAX_TEXT_LENGTH"
+              placeholder="Collez ici votre texte en néerlandais (article, paragraphe, etc.)..."
+              rows="6"
+              class="form-control import-textarea"
+              [class.error]="importError && !importText.trim()">
+            </textarea>
+            <div class="help-text">
+              Maximum {{ MAX_TEXT_LENGTH }} caractères. L'IA extraira automatiquement les mots de vocabulaire importants et exclura les articles, prépositions, etc.
+            </div>
+          </div>
+
+          <div class="error-message" *ngIf="importError">{{ importError }}</div>
+          <div class="success-message" *ngIf="importSuccessMessage">{{ importSuccessMessage }}</div>
+
+          <div class="form-actions">
+            <button 
+              type="button" 
+              class="btn-primary" 
+              (click)="extractWords()"
+              [disabled]="isExtracting || !importText.trim() || !selectedLessonForImport">
+              <span *ngIf="isExtracting">Extraction en cours...</span>
+              <span *ngIf="!isExtracting">Extraire les mots</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Liste des mots extraits -->
+        <div *ngIf="extractedWords.length > 0" class="extracted-words-section">
+          <div class="extracted-words-header">
+            <h3>Mots extraits ({{ extractedWords.length }})</h3>
+            <div class="selection-actions">
+              <button type="button" class="btn-link" (click)="selectAllWords()">Tout sélectionner</button>
+              <span class="separator">|</span>
+              <button type="button" class="btn-link" (click)="deselectAllWords()">Tout désélectionner</button>
+              <span class="selected-count">{{ getSelectedWordsCount() }} sélectionné(s)</span>
+            </div>
+          </div>
+
+          <div class="extracted-words-list">
+            <div *ngFor="let word of extractedWords; let i = index" class="extracted-word-item" [class.duplicate]="word.isDuplicate">
+              <div class="word-checkbox">
+                <input
+                  type="checkbox"
+                  [id]="'word-' + i"
+                  [checked]="word.selected"
+                  (change)="toggleWordSelection(i)"
+                  [disabled]="isExtracting">
+                <label [for]="'word-' + i"></label>
+              </div>
+              <div class="word-content">
+                <div class="word-texts">
+                  <span class="dutch-text">{{ word.dutch_text }}</span>
+                  <span class="arrow">→</span>
+                  <span class="french-text">{{ word.french_text }}</span>
+                </div>
+                <div class="word-metadata">
+                  <span *ngIf="word.frequency && word.frequency > 1" class="frequency-badge">
+                    Apparu {{ word.frequency }} fois
+                  </span>
+                  <span *ngIf="word.isDuplicate" class="duplicate-badge" [title]="'Déjà présent dans : ' + word.existingLessonTitle">
+                    ⚠️ Déjà présent dans "{{ word.existingLessonTitle }}"
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="import-actions">
+            <button 
+              type="button" 
+              class="btn-primary" 
+              (click)="importSelectedWords()"
+              [disabled]="isExtracting || getSelectedWordsCount() === 0">
+              <span *ngIf="isExtracting">Ajout en cours...</span>
+              <span *ngIf="!isExtracting">Ajouter les {{ getSelectedWordsCount() }} mot(s) sélectionné(s)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Liste des mots -->
     <div class="words-section">
       <h2>Tous les mots disponibles ({{ words.length }})</h2>

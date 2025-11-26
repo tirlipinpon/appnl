@@ -1,18 +1,20 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { WordService } from '../../../core/services/word.service';
 import { LessonService } from '../../../core/services/lesson.service';
 import { UserLessonService } from '../../../core/services/user-lesson.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { TextExtractionService } from '../../../core/services/text-extraction.service';
 import { Word } from '../../../core/models/word.model';
 import { Lesson } from '../../../core/models/lesson.model';
+import { ExtractedWord } from '../../../core/models/extracted-word.model';
 
 @Component({
   selector: 'app-word-management',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, FormsModule],
   templateUrl: './word-management.html',
   styleUrl: './word-management.css',
 })
@@ -22,6 +24,7 @@ export class WordManagement implements OnInit {
   private userLessonService = inject(UserLessonService);
   public authService = inject(AuthService);
   private supabaseService = inject(SupabaseService);
+  private textExtractionService = inject(TextExtractionService);
   private fb = inject(FormBuilder);
 
   words: Word[] = [];
@@ -35,6 +38,16 @@ export class WordManagement implements OnInit {
   hiddenWordIds: Set<string> = new Set();
   editedWordIds: Set<string> = new Set(); // Mots qui ont été modifiés personnellement
   expandedLessons: Set<string> = new Set(); // Leçons ouvertes/fermées
+
+  // Propriétés pour l'import depuis texte
+  showImportSection: boolean = false;
+  importText: string = '';
+  selectedLessonForImport: string = '';
+  extractedWords: ExtractedWord[] = [];
+  isExtracting: boolean = false;
+  importError: string = '';
+  importSuccessMessage: string = '';
+  readonly MAX_TEXT_LENGTH = 3000;
 
   constructor() {
     this.wordForm = this.fb.group({
@@ -350,5 +363,163 @@ export class WordManagement implements OnInit {
 
   isLessonExpanded(lessonId: string): boolean {
     return this.expandedLessons.has(lessonId);
+  }
+
+  // Méthodes pour l'import depuis texte
+  toggleImportSection(): void {
+    this.showImportSection = !this.showImportSection;
+    if (!this.showImportSection) {
+      // Réinitialiser les données lors de la fermeture
+      this.importText = '';
+      this.selectedLessonForImport = '';
+      this.extractedWords = [];
+      this.importError = '';
+      this.importSuccessMessage = '';
+    }
+  }
+
+  validateImportText(): boolean {
+    if (!this.importText.trim()) {
+      this.importError = 'Veuillez coller un texte néerlandais';
+      return false;
+    }
+
+    if (this.importText.length > this.MAX_TEXT_LENGTH) {
+      this.importError = `Le texte ne doit pas dépasser ${this.MAX_TEXT_LENGTH} caractères (actuellement ${this.importText.length})`;
+      return false;
+    }
+
+    if (!this.selectedLessonForImport) {
+      this.importError = 'Veuillez sélectionner une leçon';
+      return false;
+    }
+
+    this.importError = '';
+    return true;
+  }
+
+  async extractWords(): Promise<void> {
+    if (!this.validateImportText()) {
+      return;
+    }
+
+    try {
+      this.isExtracting = true;
+      this.importError = '';
+      this.importSuccessMessage = '';
+      this.extractedWords = [];
+
+      // Extraire les mots depuis le texte
+      const extracted = await this.textExtractionService.extractWordsFromText(this.importText);
+      
+      // Vérifier les doublons
+      const wordsWithDuplicates = await this.textExtractionService.checkDuplicates(extracted);
+      
+      this.extractedWords = wordsWithDuplicates;
+      
+      if (this.extractedWords.length === 0) {
+        this.importError = 'Aucun mot de vocabulaire n\'a pu être extrait du texte. Vérifiez que le texte contient des mots importants.';
+      }
+    } catch (error: any) {
+      console.error('Error extracting words:', error);
+      this.importError = error.message || 'Erreur lors de l\'extraction des mots. Veuillez réessayer.';
+    } finally {
+      this.isExtracting = false;
+    }
+  }
+
+  toggleWordSelection(index: number): void {
+    if (this.extractedWords[index]) {
+      this.extractedWords[index].selected = !this.extractedWords[index].selected;
+    }
+  }
+
+  selectAllWords(): void {
+    this.extractedWords.forEach(word => word.selected = true);
+  }
+
+  deselectAllWords(): void {
+    this.extractedWords.forEach(word => word.selected = false);
+  }
+
+  async importSelectedWords(): Promise<void> {
+    const selectedWords = this.extractedWords.filter(w => w.selected);
+    
+    if (selectedWords.length === 0) {
+      this.importError = 'Veuillez sélectionner au moins un mot à ajouter';
+      return;
+    }
+
+    if (!this.selectedLessonForImport) {
+      this.importError = 'Veuillez sélectionner une leçon';
+      return;
+    }
+
+    try {
+      this.isExtracting = true;
+      this.importError = '';
+      this.importSuccessMessage = '';
+
+      const user = this.authService.getCurrentUser();
+      let addedCount = 0;
+      let skippedCount = 0;
+
+      for (const word of selectedWords) {
+        try {
+          if (user) {
+            // Ajouter via le service utilisateur (création globale + ajout personnel)
+            await this.userLessonService.addNewWordToLesson(user.id, this.selectedLessonForImport, {
+              french_text: word.french_text,
+              dutch_text: word.dutch_text
+            });
+          } else {
+            // Ajouter directement (admin global)
+            await this.wordService.createWord({
+              french_text: word.french_text,
+              dutch_text: word.dutch_text,
+              lesson_id: this.selectedLessonForImport
+            });
+          }
+          addedCount++;
+        } catch (error: any) {
+          console.error(`Error adding word ${word.dutch_text}:`, error);
+          skippedCount++;
+        }
+      }
+
+      // Recharger les données
+      await this.loadData();
+
+      // Afficher le message de succès
+      if (addedCount > 0) {
+        this.importSuccessMessage = `${addedCount} mot(s) ajouté(s) avec succès`;
+        if (skippedCount > 0) {
+          this.importSuccessMessage += ` (${skippedCount} mot(s) ignoré(s))`;
+        }
+      } else {
+        this.importError = 'Aucun mot n\'a pu être ajouté';
+      }
+
+      // Réinitialiser après 3 secondes
+      setTimeout(() => {
+        this.extractedWords = [];
+        this.importText = '';
+        this.selectedLessonForImport = '';
+      }, 3000);
+
+    } catch (error: any) {
+      console.error('Error importing words:', error);
+      this.importError = error.message || 'Erreur lors de l\'ajout des mots';
+    } finally {
+      this.isExtracting = false;
+    }
+  }
+
+  getSelectedWordsCount(): number {
+    return this.extractedWords.filter(w => w.selected).length;
+  }
+
+  getRemainingCharacters(): number {
+    return this.MAX_TEXT_LENGTH - this.importText.length;
   }
 }

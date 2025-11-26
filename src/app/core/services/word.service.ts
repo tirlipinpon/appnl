@@ -150,5 +150,41 @@ export class WordService {
     }
     return shuffled;
   }
+
+  /**
+   * Vérifie si des mots néerlandais existent déjà dans la base de données
+   * Retourne les mots existants avec leur lesson_id
+   */
+  async checkWordsExist(dutchWords: string[]): Promise<Array<{ dutch_text: string; lesson_id: string }>> {
+    if (dutchWords.length === 0) {
+      return [];
+    }
+
+    // Normaliser les mots pour la comparaison (lowercase, trim)
+    const normalizedWords = dutchWords.map(w => w.toLowerCase().trim());
+    
+    // Récupérer tous les mots de la base
+    const { data, error } = await this.supabaseService.client
+      .from('nlapp_words')
+      .select('dutch_text, lesson_id');
+
+    if (error) throw error;
+    if (!data || data.length === 0) return [];
+
+    // Filtrer les mots qui existent déjà (comparaison insensible à la casse)
+    const existingWords: Array<{ dutch_text: string; lesson_id: string }> = [];
+    
+    data.forEach(word => {
+      const normalizedExisting = word.dutch_text.toLowerCase().trim();
+      if (normalizedWords.includes(normalizedExisting)) {
+        existingWords.push({
+          dutch_text: word.dutch_text,
+          lesson_id: word.lesson_id
+        });
+      }
+    });
+
+    return existingWords;
+  }
 }
 
