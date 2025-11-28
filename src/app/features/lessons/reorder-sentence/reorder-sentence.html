@@ -98,6 +98,14 @@
 
     <div class="action-buttons">
       <button 
+        *ngIf="canUseHelp()"
+        class="btn-help" 
+        (click)="requestHelp()"
+        title="Obtenir de l'aide pour placer des mots supplémentaires"
+      >
+        💡 Obtenir de l'aide ({{ helpUsedCount }}/{{ maxHelpCount }})
+      </button>
+      <button 
         class="btn-skip-game" 
         (click)="nextGameRequested.emit()"
       >

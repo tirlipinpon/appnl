@@ -48,11 +48,15 @@ export class ReorderSentence implements OnInit, OnDestroy {
   targetWords: (WordItem | null)[] = []; // Mots dans l'ordre à reconstruire (tableau final)
   correctOrder: string[] = []; // Ordre correct des mots pour la validation
   wordValidity: boolean[] = []; // État de validité de chaque position
+  originalWordItems: WordItem[] = []; // Référence aux mots originaux pour l'aide
+  originalWords: string[] = []; // Référence aux mots originaux (texte) pour l'aide
 
   score = { correct: 0, total: 0 };
   draggedWord: WordItem | null = null;
   draggedFromIndex: number = -1;
   draggedFromSource: boolean = false;
+  helpUsedCount = 0; // Nombre de fois que l'aide a été utilisée pour la phrase actuelle
+  maxHelpCount = 3; // Nombre maximum de fois que l'aide peut être utilisée
 
   /**
    * Découpe une phrase en mots en conservant la ponctuation
@@ -231,14 +235,26 @@ export class ReorderSentence implements OnInit, OnDestroy {
       id: `word-${this.currentIndex}-${index}-${Date.now()}`
     }));
 
-    // Mélanger les mots pour le tableau de départ
-    this.sourceWords = this.shuffleArray(wordItems);
-    
+    // Sauvegarder les références originales pour l'aide
+    this.originalWordItems = [...wordItems];
+    this.originalWords = [...words];
+
+    // Réinitialiser le compteur d'aide pour la nouvelle phrase
+    this.helpUsedCount = 0;
+
     // Initialiser le tableau final avec des valeurs null
     this.targetWords = new Array(words.length).fill(null);
     
     // Initialiser la validité
     this.wordValidity = new Array(words.length).fill(false);
+
+    // Si la phrase a plus de 10 mots, pré-placer stratégiquement certains mots
+    if (words.length > 10) {
+      this.prePlaceWords(wordItems, words);
+    } else {
+      // Mélanger tous les mots pour le tableau de départ
+      this.sourceWords = this.shuffleArray(wordItems);
+    }
 
     console.log('[DEBUG] Initialisation des mots:', {
       phraseOriginale: this.currentSentence.sentence,
@@ -246,8 +262,185 @@ export class ReorderSentence implements OnInit, OnDestroy {
       motManquant: this.currentSentence.missingWord,
       motsCorrects: this.correctOrder,
       motsMelanges: this.sourceWords.map(w => w.text),
-      tableauFinal: this.targetWords.map(w => w ? w.text : null)
+      tableauFinal: this.targetWords.map(w => w ? w.text : null),
+      motsPreplaces: words.length > 10 ? this.targetWords.filter(w => w !== null).length : 0
     });
+  }
+
+  /**
+   * Vérifie si un mot est un article défini/indéfini
+   */
+  private isArticle(word: string): boolean {
+    const normalized = this.normalizeWord(word);
+    const articles = this.direction === 'dutch_to_french' 
+      ? ['de', 'het', 'een', 'een'] // Néerlandais
+      : ['le', 'la', 'les', 'un', 'une', 'des', 'du', 'de']; // Français
+    return articles.includes(normalized);
+  }
+
+  /**
+   * Vérifie si un mot est une préposition
+   */
+  private isPreposition(word: string): boolean {
+    const normalized = this.normalizeWord(word);
+    const prepositions = this.direction === 'dutch_to_french'
+      ? ['in', 'op', 'met', 'van', 'aan', 'voor', 'bij', 'naar', 'over', 'onder', 'tussen', 'door', 'uit', 'tegen', 'zonder', 'tijdens']
+      : ['dans', 'sur', 'avec', 'de', 'à', 'pour', 'chez', 'vers', 'par', 'sous', 'entre', 'sans', 'pendant', 'contre', 'devant', 'derrière'];
+    return prepositions.includes(normalized);
+  }
+
+  /**
+   * Vérifie si un mot est une conjonction
+   */
+  private isConjunction(word: string): boolean {
+    const normalized = this.normalizeWord(word);
+    const conjunctions = this.direction === 'dutch_to_french'
+      ? ['en', 'maar', 'of', 'want', 'dus', 'omdat', 'hoewel', 'terwijl', 'als', 'dat', 'die', 'waar']
+      : ['et', 'mais', 'ou', 'car', 'donc', 'parce', 'que', 'bien', 'que', 'pendant', 'que', 'si', 'que', 'où'];
+    return conjunctions.includes(normalized);
+  }
+
+  /**
+   * Vérifie si un mot est un pronom
+   */
+  private isPronoun(word: string): boolean {
+    const normalized = this.normalizeWord(word);
+    const pronouns = this.direction === 'dutch_to_french'
+      ? ['ik', 'je', 'jij', 'hij', 'zij', 'ze', 'wij', 'we', 'jullie', 'zij', 'mij', 'me', 'jou', 'hem', 'haar', 'ons', 'hun', 'hen']
+      : ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles', 'me', 'te', 'se', 'nous', 'vous', 'le', 'la', 'les', 'lui', 'leur'];
+    return pronouns.includes(normalized);
+  }
+
+  /**
+   * Vérifie si un mot est un adverbe de temps
+   */
+  private isTimeAdverb(word: string): boolean {
+    const normalized = this.normalizeWord(word);
+    const timeAdverbs = this.direction === 'dutch_to_french'
+      ? ['vandaag', 'gisteren', 'morgen', 'nu', 'straks', 'later', 'eerst', 'dan', 'toen', 'altijd', 'nooit', 'soms', 'vaak']
+      : ['aujourd\'hui', 'hier', 'demain', 'maintenant', 'bientôt', 'plus', 'tard', 'd\'abord', 'ensuite', 'toujours', 'jamais', 'parfois', 'souvent'];
+    return timeAdverbs.includes(normalized);
+  }
+
+  /**
+   * Vérifie si un mot est court (1-3 caractères)
+   */
+  private isShortWord(word: string): boolean {
+    // Compter seulement les lettres, pas la ponctuation
+    const lettersOnly = word.replace(/[^a-zA-ZàâäéèêëïîôöùûüÿçÀÂÄÉÈÊËÏÎÔÖÙÛÜŸÇ]/g, '');
+    return lettersOnly.length <= 3 && lettersOnly.length > 0;
+  }
+
+  /**
+   * Vérifie si un mot est stratégique à pré-placer
+   */
+  private isStrategicWord(word: string, index: number, totalWords: number): boolean {
+    // Toujours pré-placer le premier et dernier mot
+    if (index === 0 || index === totalWords - 1) {
+      return true;
+    }
+
+    // Pré-placer les mots de structure grammaticale
+    if (this.isArticle(word) || this.isPreposition(word) || this.isConjunction(word) || this.isPronoun(word)) {
+      return true;
+    }
+
+    // Pré-placer les adverbes de temps (souvent en début ou position fixe)
+    if (this.isTimeAdverb(word) && index < totalWords * 0.3) {
+      return true;
+    }
+
+    // Pré-placer les mots courts et fréquents au début/milieu
+    if (this.isShortWord(word) && index < totalWords * 0.6) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Pré-place stratégiquement certains mots dans le tableau cible pour les phrases longues (>10 mots)
+   * Place environ 30-40% des mots déjà en position correcte
+   */
+  private prePlaceWords(wordItems: WordItem[], words: string[]) {
+    const totalWords = wordItems.length;
+    // Calculer le nombre de mots à pré-placer (environ 30-35% arrondi)
+    const targetPrePlaced = Math.max(3, Math.floor(totalWords * 0.35));
+    
+    // Créer une copie des mots pour manipulation
+    const remainingWords = [...wordItems];
+    const prePlacedIndices = new Set<number>();
+    
+    // 1. Toujours placer le premier mot
+    if (totalWords > 0) {
+      this.targetWords[0] = wordItems[0];
+      prePlacedIndices.add(0);
+      const firstWordIndex = remainingWords.findIndex(w => w.id === wordItems[0].id);
+      if (firstWordIndex !== -1) {
+        remainingWords.splice(firstWordIndex, 1);
+      }
+    }
+    
+    // 2. Toujours placer le dernier mot
+    if (totalWords > 1) {
+      const lastIndex = totalWords - 1;
+      this.targetWords[lastIndex] = wordItems[lastIndex];
+      prePlacedIndices.add(lastIndex);
+      const lastWordIndex = remainingWords.findIndex(w => w.id === wordItems[lastIndex].id);
+      if (lastWordIndex !== -1) {
+        remainingWords.splice(lastWordIndex, 1);
+      }
+    }
+    
+    // 3. Identifier tous les mots stratégiques restants
+    const strategicIndices: number[] = [];
+    for (let i = 1; i < totalWords - 1; i++) {
+      if (this.isStrategicWord(words[i], i, totalWords) && !prePlacedIndices.has(i)) {
+        strategicIndices.push(i);
+      }
+    }
+    
+    // 4. Sélectionner les mots stratégiques à pré-placer (priorité aux premiers de la liste)
+    // On veut environ 30-35% au total, donc on prend les plus stratégiques
+    const remainingSlots = targetPrePlaced - prePlacedIndices.size;
+    const indicesToPrePlace = strategicIndices.slice(0, remainingSlots);
+    
+    // 5. Placer les mots stratégiques sélectionnés
+    for (const index of indicesToPrePlace) {
+      this.targetWords[index] = wordItems[index];
+      prePlacedIndices.add(index);
+      const wordIndex = remainingWords.findIndex(w => w.id === wordItems[index].id);
+      if (wordIndex !== -1) {
+        remainingWords.splice(wordIndex, 1);
+      }
+    }
+    
+    // 6. Si on n'a pas encore atteint le nombre cible, placer quelques mots supplémentaires
+    // de manière équilibrée au milieu de la phrase
+    const stillNeeded = targetPrePlaced - prePlacedIndices.size;
+    if (stillNeeded > 0 && totalWords > 2) {
+      const startIndex = 1;
+      const endIndex = totalWords - 1;
+      const interval = Math.floor((endIndex - startIndex) / (stillNeeded + 1));
+      
+      for (let i = 0; i < stillNeeded; i++) {
+        const targetIndex = startIndex + (i + 1) * interval;
+        if (targetIndex < endIndex && !prePlacedIndices.has(targetIndex)) {
+          this.targetWords[targetIndex] = wordItems[targetIndex];
+          prePlacedIndices.add(targetIndex);
+          const wordIndex = remainingWords.findIndex(w => w.id === wordItems[targetIndex].id);
+          if (wordIndex !== -1) {
+            remainingWords.splice(wordIndex, 1);
+          }
+        }
+      }
+    }
+    
+    // 7. Mélanger les mots restants pour le tableau source
+    this.sourceWords = this.shuffleArray(remainingWords);
+    
+    // 8. Valider les mots pré-placés
+    this.validateWords();
   }
 
   /**
@@ -274,6 +467,157 @@ export class ReorderSentence implements OnInit, OnDestroy {
       tableauDepart: this.sourceWords.map(w => w.text),
       tousCorrects: this.isAllCorrect()
     });
+  }
+
+  /**
+   * Vérifie si le bouton d'aide peut être utilisé
+   */
+  canUseHelp(): boolean {
+    if (!this.currentSentence) return false;
+    const totalWords = this.originalWords.length;
+    
+    // Afficher le bouton uniquement pour les phrases > 10 mots
+    if (totalWords <= 10) return false;
+    
+    // Vérifier qu'on n'a pas atteint la limite d'aide
+    if (this.helpUsedCount >= this.maxHelpCount) return false;
+    
+    // Vérifier qu'il reste des mots à placer ou des erreurs à corriger
+    const hasEmptySlots = this.targetWords.some(w => w === null);
+    const hasIncorrectWords = this.wordValidity.some(v => v === false);
+    
+    return hasEmptySlots || hasIncorrectWords;
+  }
+
+  /**
+   * Place des mots supplémentaires pour aider l'utilisateur
+   */
+  requestHelp() {
+    if (!this.canUseHelp()) return;
+
+    const totalWords = this.originalWords.length;
+    const wordsToPlace = 2 + Math.floor(this.helpUsedCount); // 2-3 mots selon le nombre de clics
+    
+    // Trouver les emplacements vides ou incorrects
+    const emptyOrIncorrectIndices: number[] = [];
+    for (let i = 0; i < totalWords; i++) {
+      if (this.targetWords[i] === null || !this.wordValidity[i]) {
+        emptyOrIncorrectIndices.push(i);
+      }
+    }
+
+    // Si on a des mots incorrects, les corriger en priorité
+    const incorrectIndices = emptyOrIncorrectIndices.filter(i => 
+      this.targetWords[i] !== null && !this.wordValidity[i]
+    );
+
+    // Si on a des emplacements vides, les remplir avec des mots stratégiques
+    const emptyIndices = emptyOrIncorrectIndices.filter(i => this.targetWords[i] === null);
+
+    let placedCount = 0;
+
+    // 1. Corriger les mots incorrects en premier
+    for (const index of incorrectIndices) {
+      if (placedCount >= wordsToPlace) break;
+      
+      // Trouver le bon mot pour cette position
+      const correctWord = this.originalWordItems[index];
+      if (correctWord) {
+        // Retirer l'ancien mot incorrect du tableau source s'il y est
+        const oldWord = this.targetWords[index];
+        if (oldWord) {
+          const oldWordIndex = this.sourceWords.findIndex(w => w.id === oldWord.id);
+          if (oldWordIndex !== -1) {
+            this.sourceWords.splice(oldWordIndex, 1);
+          }
+        }
+        
+        // Placer le bon mot
+        this.targetWords[index] = correctWord;
+        
+        // Retirer le mot du tableau source
+        const sourceIndex = this.sourceWords.findIndex(w => w.id === correctWord.id);
+        if (sourceIndex !== -1) {
+          this.sourceWords.splice(sourceIndex, 1);
+        }
+        
+        placedCount++;
+      }
+    }
+
+    // 2. Remplir les emplacements vides avec des mots stratégiques
+    if (placedCount < wordsToPlace && emptyIndices.length > 0) {
+      // Trier les emplacements vides par priorité stratégique
+      const prioritizedIndices = emptyIndices
+        .map(index => ({
+          index,
+          priority: this.getStrategicPriority(this.originalWords[index], index, totalWords)
+        }))
+        .sort((a, b) => b.priority - a.priority)
+        .map(item => item.index);
+
+      for (const index of prioritizedIndices) {
+        if (placedCount >= wordsToPlace) break;
+        
+        const correctWord = this.originalWordItems[index];
+        if (correctWord) {
+          // Vérifier que le mot est encore dans le tableau source
+          const sourceIndex = this.sourceWords.findIndex(w => w.id === correctWord.id);
+          if (sourceIndex !== -1) {
+            this.targetWords[index] = correctWord;
+            this.sourceWords.splice(sourceIndex, 1);
+            placedCount++;
+          }
+        }
+      }
+    }
+
+    // Incrémenter le compteur d'aide seulement si des mots ont été placés
+    if (placedCount > 0) {
+      this.helpUsedCount++;
+      
+      // Valider les mots placés
+      this.validateWords();
+
+      console.log('[DEBUG] Aide utilisée:', {
+        motsPlaces: placedCount,
+        aideUtilisee: this.helpUsedCount,
+        tableauFinal: this.targetWords.map(w => w ? w.text : null)
+      });
+    } else {
+      console.log('[DEBUG] Aide demandée mais aucun mot à placer (tous les mots sont déjà corrects)');
+    }
+  }
+
+  /**
+   * Calcule la priorité stratégique d'un mot pour le placement
+   * Plus le score est élevé, plus le mot est stratégique
+   */
+  private getStrategicPriority(word: string, index: number, totalWords: number): number {
+    let priority = 0;
+
+    // Priorité élevée pour les mots de structure grammaticale
+    if (this.isArticle(word)) priority += 10;
+    if (this.isPreposition(word)) priority += 9;
+    if (this.isConjunction(word)) priority += 8;
+    if (this.isPronoun(word)) priority += 7;
+
+    // Priorité pour les adverbes de temps au début
+    if (this.isTimeAdverb(word) && index < totalWords * 0.3) {
+      priority += 6;
+    }
+
+    // Priorité pour les mots courts au début/milieu
+    if (this.isShortWord(word) && index < totalWords * 0.6) {
+      priority += 5;
+    }
+
+    // Priorité légèrement plus élevée pour les positions au début/milieu
+    if (index < totalWords * 0.5) {
+      priority += 2;
+    }
+
+    return priority;
   }
 
   /**

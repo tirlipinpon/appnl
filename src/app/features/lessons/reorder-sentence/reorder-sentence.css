@@ -324,6 +324,31 @@
   flex-wrap: wrap;
 }
 
+.btn-help {
+  padding: 12px 24px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-help:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}
+
+.btn-help:active {
+  transform: translateY(0);
+}
+
 .btn-skip-game {
   padding: 12px 24px;
   background: #ff9800;
