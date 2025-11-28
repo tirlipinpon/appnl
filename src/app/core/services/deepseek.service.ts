@@ -905,5 +905,162 @@ ${text}`;
     
     return words;
   }
+
+  /**
+   * Récupère ou génère une explication détaillée d'un mot en néerlandais
+   * L'explication est uniquement en néerlandais, sans traduction
+   * @param wordId L'ID du mot dans la DB
+   * @param dutchWord Le mot en néerlandais à expliquer
+   * @returns L'explication du mot en néerlandais
+   */
+  async getOrGenerateWordExplanation(wordId: string, dutchWord: string): Promise<string> {
+    // 1. Vérifier si l'explication existe déjà dans la DB
+    const storedExplanation = await this.getStoredExplanation(wordId);
+    
+    if (storedExplanation) {
+      console.log(`Explication récupérée depuis DB pour wordId: ${wordId}`);
+      return storedExplanation;
+    }
+    
+    // 2. Générer une nouvelle explication avec DeepSeek
+    console.log(`Génération d'une nouvelle explication pour wordId: ${wordId}, mot: ${dutchWord}`);
+    const explanation = await this.generateWordExplanation(dutchWord);
+    
+    // 3. Sauvegarder l'explication dans la DB
+    if (explanation) {
+      await this.saveExplanationToDatabase(wordId, explanation);
+    }
+    
+    return explanation || 'Désolé, je n\'ai pas pu générer d\'explication pour ce mot.';
+  }
+
+  /**
+   * Récupère l'explication stockée dans la DB
+   */
+  private async getStoredExplanation(wordId: string): Promise<string | null> {
+    try {
+      const { data, error } = await this.supabaseService.client
+        .from('nlapp_word_explanations')
+        .select('explanation_text')
+        .eq('word_id', wordId)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Aucun résultat trouvé, c'est normal
+          return null;
+        }
+        console.error('Error fetching stored explanation:', error);
+        return null;
+      }
+      
+      if (!data || !data.explanation_text) {
+        return null;
+      }
+      
+      return data.explanation_text;
+    } catch (error) {
+      console.error('Error fetching stored explanation:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Sauvegarde l'explication dans la DB
+   */
+  private async saveExplanationToDatabase(wordId: string, explanation: string): Promise<void> {
+    try {
+      const { error } = await this.supabaseService.client
+        .from('nlapp_word_explanations')
+        .upsert({
+          word_id: wordId,
+          explanation_text: explanation,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'word_id'
+        });
+      
+      if (error) {
+        console.error('Error saving explanation to database:', error);
+      } else {
+        console.log(`Explication sauvegardée avec succès pour wordId: ${wordId}`);
+      }
+    } catch (error) {
+      console.error('Error saving explanation:', error);
+    }
+  }
+
+  /**
+   * Génère une explication détaillée d'un mot en néerlandais avec DeepSeek
+   * L'explication est uniquement en néerlandais, sans traduction
+   */
+  private async generateWordExplanation(dutchWord: string): Promise<string> {
+    try {
+      const prompt = this.buildExplanationPrompt(dutchWord);
+      
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'Je t\'envoie un mot en néerlandais. Je ne veux jamais de traduction, même indirecte. Ton rôle est de donner une explication TRÈS COURTE et SYNTHÉTIQUE en une ou deux phrases maximum. Si le mot peut être décomposé (préfixes, suffixes, racines), explique brièvement sa structure morphologique. Donne uniquement l\'essentiel : la catégorie grammaticale, la décomposition si possible, et un indice sur son usage, sans jamais révéler sa signification en français ni dans aucune autre langue. Reste totalement dans le cadre du néerlandais. Réponds uniquement en néerlandais, de manière concise et claire. MAXIMUM 2 phrases.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 200
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content;
+      
+      if (!content) {
+        throw new Error('No content received from API');
+      }
+
+      return content.trim();
+    } catch (error) {
+      console.error('Error generating word explanation:', error);
+      return 'Erreur lors de la génération de l\'explication. Veuillez réessayer.';
+    }
+  }
+
+  /**
+   * Construit le prompt pour demander une explication du mot
+   */
+  private buildExplanationPrompt(dutchWord: string): string {
+    return `Explique-moi le mot néerlandais "${dutchWord}" en UNE OU DEUX PHRASES MAXIMUM, uniquement en néerlandais. 
+
+Si le mot peut être décomposé, explique brièvement sa structure :
+- Les préfixes (ver-, be-, ont-, etc.) et leur fonction
+- La racine ou le verbe de base
+- Les suffixes (-en, -ens, -lijk, etc.) et leur rôle
+- Comment ces éléments se combinent pour former le mot
+
+Donne aussi :
+- Sa catégorie grammaticale
+- Un indice sur son usage ou sa fonction
+
+IMPORTANT : 
+- MAXIMUM 2 phrases, très courtes et synthétiques
+- Si décomposition possible, explique-la brièvement (ex: "ver- (préfixe) + volg (volgen) + -ens (suffixe adverbial)")
+- Ne donne JAMAIS de traduction en français ou dans une autre langue
+- Reste uniquement dans le cadre du néerlandais
+- Donne juste l'essentiel pour aider à comprendre la structure et l'usage du mot`;
+  }
 }
 

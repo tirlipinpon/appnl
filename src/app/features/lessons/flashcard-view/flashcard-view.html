@@ -16,13 +16,24 @@
       <div class="flashcard-back">
         <div class="language-label">{{ getBackLanguage() }}</div>
         <div class="word-text">{{ getBackText() }}</div>
-        <button 
-          class="audio-btn" 
-          (click)="playAudio(); $event.stopPropagation()" 
-          *ngIf="audioService.isSupported() && !isAudioButtonOnFront()"
-        >
-          🔊
-        </button>
+        <div class="action-buttons-back">
+          <button 
+            class="audio-btn" 
+            (click)="playAudio(); $event.stopPropagation()" 
+            *ngIf="audioService.isSupported() && !isAudioButtonOnFront()"
+          >
+            🔊
+          </button>
+          <button 
+            class="help-btn" 
+            (click)="requestWordHelp(); $event.stopPropagation()" 
+            *ngIf="shouldShowHelpButton()"
+            [disabled]="isLoadingHelp"
+            title="Obtenir de l'aide pour comprendre ce mot"
+          >
+            💡 Aide
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -53,5 +64,27 @@
   <div class="progress-bar">
     <div class="progress-fill" [style.width.%]="((currentIndex + 1) / totalWords) * 100"></div>
     <span class="progress-text">{{ currentIndex + 1 }} / {{ totalWords }}</span>
+  </div>
+
+  <!-- Modal d'explication -->
+  <div class="help-modal-overlay" *ngIf="showHelpExplanation" (click)="closeHelpExplanation()">
+    <div class="help-modal" (click)="$event.stopPropagation()">
+      <div class="help-modal-header">
+        <h3>Explication du mot : {{ word.dutch_text }}</h3>
+        <button class="close-btn" (click)="closeHelpExplanation()">×</button>
+      </div>
+      <div class="help-modal-content">
+        <div *ngIf="isLoadingHelp" class="loading-help">
+          <div class="spinner"></div>
+          <p>Chargement de l'explication...</p>
+        </div>
+        <div *ngIf="helpError" class="error-help">
+          <p>{{ helpError }}</p>
+        </div>
+        <div *ngIf="!isLoadingHelp && !helpError && helpExplanation" class="explanation-text">
+          <p [innerHTML]="formatExplanation(helpExplanation)"></p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
