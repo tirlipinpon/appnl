@@ -26,6 +26,12 @@ export class FillInTheBlank implements OnInit, AfterViewInit, OnDestroy {
   
   // Cache pour les descriptions de leçons
   private lessonDescriptions: Map<string, string> = new Map();
+  
+  // Propriétés pour l'aide
+  showHelpExplanation = false;
+  helpExplanation = '';
+  isLoadingHelp = false;
+  helpError: string | null = null;
 
   @Input() words: Word[] = [];
   @Input() direction: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
@@ -676,6 +682,102 @@ export class FillInTheBlank implements OnInit, AfterViewInit, OnDestroy {
       event.preventDefault();
       this.checkAnswer();
     }
+  }
+
+  /**
+   * Vérifie si le bouton d'aide doit être affiché
+   * (toujours affiché car on peut toujours obtenir le mot néerlandais)
+   */
+  shouldShowHelpButton(): boolean {
+    const word = this.getCurrentWord();
+    return !!word?.dutch_text;
+  }
+
+  /**
+   * Récupère le mot néerlandais à expliquer selon la direction
+   */
+  getDutchWordToExplain(): string | null {
+    if (this.direction === 'dutch_to_french' && this.currentSentence?.missingWord) {
+      // Dans dutch_to_french, le mot manquant est en néerlandais
+      return this.currentSentence.missingWord;
+    }
+    const word = this.getCurrentWord();
+    return word?.dutch_text || null;
+  }
+
+  /**
+   * Demande une explication du mot en néerlandais
+   */
+  async requestWordHelp() {
+    const dutchWord = this.getDutchWordToExplain();
+    const word = this.getCurrentWord();
+    if (!dutchWord || !word || this.isLoadingHelp) {
+      return;
+    }
+
+    this.isLoadingHelp = true;
+    this.helpError = null;
+    this.showHelpExplanation = true;
+
+    try {
+      const explanation = await this.deepSeekService.getOrGenerateWordExplanation(
+        word.id,
+        dutchWord
+      );
+      this.helpExplanation = explanation;
+    } catch (error) {
+      console.error('Error getting word explanation:', error);
+      this.helpError = 'Erreur lors du chargement de l\'explication. Veuillez réessayer.';
+      this.helpExplanation = '';
+    } finally {
+      this.isLoadingHelp = false;
+    }
+  }
+
+  /**
+   * Ferme l'affichage de l'explication
+   */
+  closeHelpExplanation() {
+    this.showHelpExplanation = false;
+    this.helpExplanation = '';
+    this.helpError = null;
+  }
+
+  /**
+   * Formate l'explication pour l'affichage
+   */
+  formatExplanation(text: string): string {
+    if (!text) return '';
+    
+    let formatted = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    
+    const paragraphs = formatted.split(/\n\n+/);
+    
+    const formattedParagraphs = paragraphs.map(para => {
+      para = para.trim();
+      if (!para) return '';
+      
+      const lines = para.split('\n');
+      const isList = lines.some(line => /^[-*]\s+/.test(line.trim()));
+      
+      if (isList) {
+        const listItems = lines
+          .filter(line => /^[-*]\s+/.test(line.trim()))
+          .map(line => {
+            const content = line.replace(/^[-*]\s+/, '').trim();
+            return `<li>${content}</li>`;
+          });
+        return `<ul>${listItems.join('')}</ul>`;
+      } else {
+        para = para.replace(/\n/g, '<br>');
+        return `<p>${para}</p>`;
+      }
+    });
+    
+    return formattedParagraphs.filter(p => p).join('');
   }
 }
 

@@ -8,6 +8,15 @@
       <div class="sentence-text-wrapper">
         <div class="audio-buttons-container">
           <button 
+            class="help-btn" 
+            (click)="requestWordHelp()" 
+            *ngIf="shouldShowHelpButton() && direction === 'dutch_to_french'"
+            [disabled]="isLoadingHelp"
+            title="Obtenir de l'aide pour comprendre ce mot"
+          >
+            💡 Aide
+          </button>
+          <button 
             class="audio-btn" 
             (click)="playAudio()" 
             *ngIf="audioService.isSupported() && currentSentence"
@@ -36,6 +45,15 @@
         <div class="translation-text">{{ getCompleteTranslation() }}</div>
       </div>
       <div *ngIf="direction === 'french_to_dutch'" class="help-hint">
+        <button 
+          class="help-btn" 
+          (click)="requestWordHelp()" 
+          *ngIf="shouldShowHelpButton()"
+          [disabled]="isLoadingHelp"
+          title="Obtenir de l'aide pour comprendre ce mot"
+        >
+          💡 Aide
+        </button>
         <span class="help-label">Aide :</span>
         <span class="help-word">{{ getCurrentWord()?.dutch_text }}</span>
       </div>
@@ -119,6 +137,28 @@
   <div class="progress-bar" *ngIf="!isLoading && currentSentence">
     <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
     <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
+  </div>
+
+  <!-- Modal d'explication -->
+  <div class="help-modal-overlay" *ngIf="showHelpExplanation" (click)="closeHelpExplanation()">
+    <div class="help-modal" (click)="$event.stopPropagation()">
+      <div class="help-modal-header">
+        <h3>Explication du mot : {{ getCurrentWord()?.dutch_text }}</h3>
+        <button class="close-btn" (click)="closeHelpExplanation()">×</button>
+      </div>
+      <div class="help-modal-content">
+        <div *ngIf="isLoadingHelp" class="loading-help">
+          <div class="spinner"></div>
+          <p>Chargement de l'explication...</p>
+        </div>
+        <div *ngIf="helpError" class="error-help">
+          <p>{{ helpError }}</p>
+        </div>
+        <div *ngIf="!isLoadingHelp && !helpError && helpExplanation" class="explanation-text">
+          <p [innerHTML]="formatExplanation(helpExplanation)"></p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

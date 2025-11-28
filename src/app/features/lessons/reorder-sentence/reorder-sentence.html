@@ -6,6 +6,15 @@
   <div *ngIf="!isLoading && currentSentence" class="reorder-sentence-content">
     <div class="question-section">
       <div class="sentence-text-wrapper">
+        <button 
+          class="help-btn" 
+          (click)="requestWordHelp()" 
+          *ngIf="shouldShowHelpButton() && direction === 'dutch_to_french'"
+          [disabled]="isLoadingHelp"
+          title="Obtenir de l'aide pour comprendre ce mot"
+        >
+          💡 Aide
+        </button>
         <div class="sentence-text">Remettez les mots dans le bon ordre</div>
         <button 
           class="audio-btn" 
@@ -135,6 +144,28 @@
   <div class="progress-bar" *ngIf="!isLoading && currentSentence">
     <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
     <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
+  </div>
+
+  <!-- Modal d'explication -->
+  <div class="help-modal-overlay" *ngIf="showHelpExplanation" (click)="closeHelpExplanation()">
+    <div class="help-modal" (click)="$event.stopPropagation()">
+      <div class="help-modal-header">
+        <h3>Explication du mot : {{ getDutchWordToExplain() }}</h3>
+        <button class="close-btn" (click)="closeHelpExplanation()">×</button>
+      </div>
+      <div class="help-modal-content">
+        <div *ngIf="isLoadingHelp" class="loading-help">
+          <div class="spinner"></div>
+          <p>Chargement de l'explication...</p>
+        </div>
+        <div *ngIf="helpError" class="error-help">
+          <p>{{ helpError }}</p>
+        </div>
+        <div *ngIf="!isLoadingHelp && !helpError && helpExplanation" class="explanation-text">
+          <p [innerHTML]="formatExplanation(helpExplanation)"></p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

@@ -1009,7 +1009,7 @@ ${text}`;
           messages: [
             {
               role: 'system',
-              content: 'Je t\'envoie un mot en néerlandais. Je ne veux jamais de traduction, même indirecte. Ton rôle est de donner une explication TRÈS COURTE et SYNTHÉTIQUE en une ou deux phrases maximum. Si le mot peut être décomposé (préfixes, suffixes, racines), explique brièvement sa structure morphologique. Donne uniquement l\'essentiel : la catégorie grammaticale, la décomposition si possible, et un indice sur son usage, sans jamais révéler sa signification en français ni dans aucune autre langue. Reste totalement dans le cadre du néerlandais. Réponds uniquement en néerlandais, de manière concise et claire. MAXIMUM 2 phrases.'
+              content: 'Je t\'envoie un mot en néerlandais. Je ne veux JAMAIS de traduction, même indirecte. Ton rôle est de donner une explication STRUCTURÉE et PRÉCISE (2-3 phrases maximum). Pour chaque mot : 1) Décompose-le en ses parties constitutives (racine, préfixe, suffixe). 2) Explique la signification de chaque partie de façon simple et précise : racine = sens de base, préfixe = modification/orientation du sens, suffixe = transformation grammaticale. 3) Pour les noms, adjectifs, adverbes ou verbes, indique la catégorie grammaticale et la formation du mot. 4) Donne uniquement les informations nécessaires pour comprendre la formation et le sens originel. Ne reformule pas simplement la définition, ne mets pas de bla-bla, ne parle pas de fréquence ou d\'usage à moins que ce soit essentiel. Reste totalement dans le cadre du néerlandais. Réponds uniquement en néerlandais. Format : "Mot" → formé de "partie1" (sens) + "partie2" (sens), signifie "sens originel".'
             },
             {
               role: 'user',
@@ -1017,7 +1017,7 @@ ${text}`;
             }
           ],
           temperature: 0.7,
-          max_tokens: 200
+          max_tokens: 250
         })
       });
 
@@ -1043,24 +1043,32 @@ ${text}`;
    * Construit le prompt pour demander une explication du mot
    */
   private buildExplanationPrompt(dutchWord: string): string {
-    return `Explique-moi le mot néerlandais "${dutchWord}" en UNE OU DEUX PHRASES MAXIMUM, uniquement en néerlandais. 
+    return `Explique-moi le mot néerlandais "${dutchWord}" en 2-3 phrases maximum, uniquement en néerlandais.
 
-Si le mot peut être décomposé, explique brièvement sa structure :
-- Les préfixes (ver-, be-, ont-, etc.) et leur fonction
-- La racine ou le verbe de base
-- Les suffixes (-en, -ens, -lijk, etc.) et leur rôle
-- Comment ces éléments se combinent pour former le mot
+Écoute attentivement, voici comment tu dois traiter ce mot :
 
-Donne aussi :
-- Sa catégorie grammaticale
-- Un indice sur son usage ou sa fonction
+1. Décompose le mot en ses parties constitutives : racine, préfixe, suffixe.
+
+2. Explique la signification de chaque partie de façon simple et précise :
+   - racine = sens de base du mot
+   - préfixe = modification ou orientation du sens
+   - suffixe = transformation grammaticale ou création d'une propriété
+
+3. Pour les noms, adjectifs, adverbes ou verbes, indique la catégorie grammaticale et la formation du mot.
+
+4. Donne uniquement les informations nécessaires pour comprendre la formation et le sens originel du mot.
 
 IMPORTANT : 
-- MAXIMUM 2 phrases, très courtes et synthétiques
-- Si décomposition possible, explique-la brièvement (ex: "ver- (préfixe) + volg (volgen) + -ens (suffixe adverbial)")
+- Ne reformule pas simplement la définition
+- Ne mets pas de bla-bla
+- Ne parle pas de fréquence ou d'usage à moins que ce soit essentiel à la compréhension de la formation
 - Ne donne JAMAIS de traduction en français ou dans une autre langue
 - Reste uniquement dans le cadre du néerlandais
-- Donne juste l'essentiel pour aider à comprendre la structure et l'usage du mot`;
+
+Format de réponse souhaité :
+- Pour un adjectif : "volledig" → formé de "vol" (plein) + "-edig" (suffixe formant un adjectif), signifie "complet".
+- Pour un nom : "inhoud" → formé de "houden" (tenir) + "in-" (dans), signifie "ce qui se trouve à l'intérieur".
+- Pour un verbe : "inhouden" → "houden" (tenir) + "in-" (dans), signifie "contenir".`;
   }
 }
 

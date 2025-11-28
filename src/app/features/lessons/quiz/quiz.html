@@ -2,7 +2,18 @@
   <div *ngIf="currentWord" class="quiz-content">
     <div class="question-section">
       <div class="question-text-wrapper">
-        <div class="question-text">{{ getQuestionText() }}</div>
+        <div class="question-text-container">
+          <button 
+            class="help-btn" 
+            (click)="requestWordHelp()" 
+            *ngIf="shouldShowHelpButton()"
+            [disabled]="isLoadingHelp"
+            title="Obtenir de l'aide pour comprendre ce mot"
+          >
+            💡 Aide
+          </button>
+          <div class="question-text">{{ getQuestionText() }}</div>
+        </div>
         <button 
           class="audio-btn" 
           (click)="playAudio()" 
@@ -95,5 +106,27 @@
   <div class="progress-bar" *ngIf="currentWord">
     <div class="progress-fill" [style.width.%]="((currentIndex + 1) / words.length) * 100"></div>
     <span class="progress-text">{{ currentIndex + 1 }} / {{ words.length }}</span>
+  </div>
+
+  <!-- Modal d'explication -->
+  <div class="help-modal-overlay" *ngIf="showHelpExplanation" (click)="closeHelpExplanation()">
+    <div class="help-modal" (click)="$event.stopPropagation()">
+      <div class="help-modal-header">
+        <h3>Explication du mot : {{ currentWord?.dutch_text }}</h3>
+        <button class="close-btn" (click)="closeHelpExplanation()">×</button>
+      </div>
+      <div class="help-modal-content">
+        <div *ngIf="isLoadingHelp" class="loading-help">
+          <div class="spinner"></div>
+          <p>Chargement de l'explication...</p>
+        </div>
+        <div *ngIf="helpError" class="error-help">
+          <p>{{ helpError }}</p>
+        </div>
+        <div *ngIf="!isLoadingHelp && !helpError && helpExplanation" class="explanation-text">
+          <p [innerHTML]="formatExplanation(helpExplanation)"></p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
