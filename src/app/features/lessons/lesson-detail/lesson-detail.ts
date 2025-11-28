@@ -68,6 +68,9 @@ export class LessonDetail implements OnInit {
   fillInBlankDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
   reorderSentenceDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
   findErrorDirection: 'french_to_dutch' | 'dutch_to_french' = 'dutch_to_french';
+  
+  // Historique des étapes pour la navigation
+  stepHistory: LessonStep[] = [];
 
   /**
    * Mélange un tableau de manière aléatoire (algorithme Fisher-Yates)
@@ -92,6 +95,9 @@ export class LessonDetail implements OnInit {
     try {
       this.isLoading = true;
       const user = this.authService.getCurrentUser();
+      
+      // Réinitialiser l'historique lors du chargement d'une nouvelle leçon
+      this.stepHistory = ['flashcards'];
       
       // Charger la leçon
       const lesson = await this.lessonService.getLessonById(lessonId);
@@ -187,23 +193,27 @@ export class LessonDetail implements OnInit {
   }
 
   onFlashcardsFinish() {
+    this.stepHistory.push(this.currentStep);
     this.currentStep = 'quiz';
     this.currentFlashcardIndex = 0;
   }
 
   onFlashcardNextGameRequested() {
     // Passer directement au quiz
+    this.stepHistory.push(this.currentStep);
     this.currentStep = 'quiz';
     this.currentFlashcardIndex = 0;
   }
 
   onQuizCompleted(score: { correct: number; total: number }) {
     this.quizScore = score;
+    this.stepHistory.push(this.currentStep);
     this.currentStep = 'frenchWriting';
   }
 
   onQuizNextGameRequested() {
     // Passer directement au frenchWriting
+    this.stepHistory.push(this.currentStep);
     this.currentStep = 'frenchWriting';
   }
 
@@ -211,6 +221,7 @@ export class LessonDetail implements OnInit {
     this.frenchWritingScore = score;
     // Passer au test phrase à trous seulement si activé, sinon terminer
     if (this.lesson?.enable_fill_in_blank !== false) {
+      this.stepHistory.push(this.currentStep);
       this.currentStep = 'fillInBlank';
     } else {
       // Si le test phrase à trous est désactivé, calculer directement le score final
@@ -221,6 +232,7 @@ export class LessonDetail implements OnInit {
   onFrenchWritingNextGameRequested() {
     // Passer directement au fill-in-blank ou terminer
     if (this.lesson?.enable_fill_in_blank !== false) {
+      this.stepHistory.push(this.currentStep);
       this.currentStep = 'fillInBlank';
     } else {
       // Si le test phrase à trous est désactivé, calculer directement le score final
@@ -254,23 +266,27 @@ export class LessonDetail implements OnInit {
 
   onFillInBlankNextGameRequested() {
     // Passer au jeu de réordonnancement
+    this.stepHistory.push(this.currentStep);
     this.currentStep = 'reorderSentence';
   }
 
   async onFillInBlankCompleted(score: { correct: number; total: number }) {
     this.fillInBlankScore = score;
     // Passer au jeu de réordonnancement
+    this.stepHistory.push(this.currentStep);
     this.currentStep = 'reorderSentence';
   }
 
   async onReorderSentenceCompleted(score: { correct: number; total: number }) {
     this.reorderSentenceScore = score;
     // Passer au jeu "Trouver l'erreur"
+    this.stepHistory.push(this.currentStep);
     this.currentStep = 'findError';
   }
 
   onReorderSentenceNextGameRequested() {
     // Passer au jeu "Trouver l'erreur"
+    this.stepHistory.push(this.currentStep);
     this.currentStep = 'findError';
   }
 
@@ -509,5 +525,33 @@ export class LessonDetail implements OnInit {
 
   isWordHidden(wordId: string): boolean {
     return this.hiddenWordIds.has(wordId);
+  }
+
+  /**
+   * Retourne à l'étape précédente ou à la liste des leçons si on est à la première étape
+   * Si l'interface de gestion des mots est ouverte, la ferme d'abord
+   */
+  goToPreviousStep() {
+    // Si l'interface de gestion des mots est ouverte, la fermer d'abord
+    if (this.showWordManagement) {
+      this.showWordManagement = false;
+      return;
+    }
+    
+    // Si on est à l'étape "completed", retourner directement à la liste des leçons
+    if (this.currentStep === 'completed') {
+      this.router.navigate(['/lessons']);
+      return;
+    }
+    
+    if (this.stepHistory.length > 0) {
+      const previousStep = this.stepHistory.pop();
+      if (previousStep) {
+        this.currentStep = previousStep;
+      }
+    } else {
+      // Si on est à la première étape, retourner à la liste des leçons
+      this.router.navigate(['/lessons']);
+    }
   }
 }

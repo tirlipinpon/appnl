@@ -1,6 +1,6 @@
 <div class="lesson-detail-container">
   <div class="header">
-    <button class="btn-back" routerLink="/lessons">Retour</button>
+    <button class="btn-back" (click)="goToPreviousStep()">Retour</button>
     <h1 *ngIf="lesson">{{ lesson.title }}</h1>
     <button 
       *ngIf="authService.getCurrentUser() && !isLoading && lesson" 

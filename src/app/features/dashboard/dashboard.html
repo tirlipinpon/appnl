@@ -22,19 +22,6 @@
       </div>
     </div>
 
-    <!-- Mots à revoir -->
-    <div *ngIf="wordsToReview.length > 0" class="section">
-      <h2>Mots à revoir (priorité)</h2>
-      <div class="review-words">
-        <div *ngFor="let word of wordsToReview.slice(0, 5)" class="word-card">
-          <span class="french">{{ word.french_text }}</span>
-          <span class="arrow">→</span>
-          <span class="dutch">{{ word.dutch_text }}</span>
-        </div>
-      </div>
-      <button class="btn-primary" routerLink="/lessons">Commencer les révisions</button>
-    </div>
-
     <!-- Leçons disponibles -->
     <div class="section">
       <h2>Leçons disponibles</h2>
