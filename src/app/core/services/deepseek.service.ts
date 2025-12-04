@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { environment } from '../../../environments/environment';
 
 export interface FillInTheBlankSentence {
   sentence: string;
@@ -12,8 +13,26 @@ export interface FillInTheBlankSentence {
 })
 export class DeepSeekService {
   private supabaseService = inject(SupabaseService);
-  private readonly apiKey = 'sk-db6617f690b04336b0469ffa1c6bf839';
-  private readonly apiUrl = 'https://api.deepseek.com/v1/chat/completions';
+  // Utiliser le proxy Supabase Edge Function au lieu d'appeler directement l'API DeepSeek
+  // Cela évite les problèmes CORS
+  private readonly apiUrl = `${environment.supabase.url}/functions/v1/deepseek-proxy`;
+
+  /**
+   * Obtient les headers d'authentification pour les appels à la fonction Supabase
+   */
+  private async getAuthHeaders(): Promise<HeadersInit> {
+    const { data: { session } } = await this.supabaseService.client.auth.getSession();
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      'apikey': environment.supabase.anonKey
+    };
+    
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    
+    return headers;
+  }
 
   /**
    * Récupère ou génère une phrase à trous pour un mot
@@ -137,12 +156,10 @@ export class DeepSeekService {
     try {
       const prompt = this.buildPrompt(word, existingSentences, context, direction, frenchTranslation);
       
+      const headers = await this.getAuthHeaders();
       const response = await fetch(this.apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        },
+        headers,
         body: JSON.stringify({
           model: 'deepseek-chat',
           messages: [
@@ -399,12 +416,10 @@ export class DeepSeekService {
       const targetLanguage = direction === 'dutch_to_french' ? 'français' : 'néerlandais';
       const sourceLanguage = direction === 'dutch_to_french' ? 'néerlandais' : 'français';
       
+      const headers = await this.getAuthHeaders();
       const response = await fetch(this.apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        },
+        headers,
         body: JSON.stringify({
           model: 'deepseek-chat',
           messages: [
@@ -538,12 +553,10 @@ export class DeepSeekService {
         prompt += `  Explication : "L'adverbe de temps 'demain' doit être placé avant le complément de lieu 'au cinéma'"\n`;
       }
 
+      const headers = await this.getAuthHeaders();
       const response = await fetch(this.apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        },
+        headers,
         body: JSON.stringify({
           model: 'deepseek-chat',
           messages: [
@@ -674,12 +687,10 @@ ${text}`;
       const timeoutId = setTimeout(() => controller.abort(), 30000); // Timeout de 30 secondes
 
       try {
+        const headers = await this.getAuthHeaders();
         const response = await fetch(this.apiUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`
-          },
+          headers,
           body: JSON.stringify({
             model: 'deepseek-chat',
             messages: [
@@ -998,12 +1009,10 @@ ${text}`;
     try {
       const prompt = this.buildExplanationPrompt(dutchWord);
       
+      const headers = await this.getAuthHeaders();
       const response = await fetch(this.apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        },
+        headers,
         body: JSON.stringify({
           model: 'deepseek-chat',
           messages: [
