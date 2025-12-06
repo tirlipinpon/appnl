@@ -1018,7 +1018,7 @@ ${text}`;
           messages: [
             {
               role: 'system',
-              content: 'Je t\'envoie un mot en néerlandais. Je ne veux JAMAIS de traduction, même indirecte. Ton rôle est de donner une explication STRUCTURÉE et PRÉCISE (2-3 phrases maximum). Pour chaque mot : 1) Décompose-le en ses parties constitutives (racine, préfixe, suffixe). 2) Explique la signification de chaque partie de façon simple et précise : racine = sens de base, préfixe = modification/orientation du sens, suffixe = transformation grammaticale. 3) Pour les noms, adjectifs, adverbes ou verbes, indique la catégorie grammaticale et la formation du mot. 4) Donne uniquement les informations nécessaires pour comprendre la formation et le sens originel. Ne reformule pas simplement la définition, ne mets pas de bla-bla, ne parle pas de fréquence ou d\'usage à moins que ce soit essentiel. Reste totalement dans le cadre du néerlandais. Réponds uniquement en néerlandais. Format : "Mot" → formé de "partie1" (sens) + "partie2" (sens), signifie "sens originel".'
+              content: 'Je t\'envoie un mot en néerlandais. Ton rôle est de donner une explication STRUCTURÉE et PRÉCISE en français (2-3 phrases maximum). IMPORTANT : Réponds l\'explication en français, mais garde TOUS les termes néerlandais (parties du mot décomposé, racines, préfixes, suffixes) en néerlandais pour rester cohérent avec l\'apprentissage. Pour chaque mot : 1) Décompose-le en ses parties constitutives (racine, préfixe, suffixe) en gardant les termes néerlandais. 2) Explique la signification de chaque partie de façon simple et précise en français : racine = sens de base, préfixe = modification/orientation du sens, suffixe = transformation grammaticale. 3) Pour les noms, adjectifs, adverbes ou verbes, indique la catégorie grammaticale et la formation du mot. 4) Donne uniquement les informations nécessaires pour comprendre la formation et le sens originel. Ne reformule pas simplement la définition, ne mets pas de bla-bla, ne parle pas de fréquence ou d\'usage à moins que ce soit essentiel. Format : "Mot" → formé de "partie1_néerlandais" (sens en français) + "partie2_néerlandais" (sens en français), signifie "sens originel en français".'
             },
             {
               role: 'user',
@@ -1052,13 +1052,13 @@ ${text}`;
    * Construit le prompt pour demander une explication du mot
    */
   private buildExplanationPrompt(dutchWord: string): string {
-    return `Explique-moi le mot néerlandais "${dutchWord}" en 2-3 phrases maximum, uniquement en néerlandais.
+    return `Explique-moi le mot néerlandais "${dutchWord}" en 2-3 phrases maximum, en français.
 
 Écoute attentivement, voici comment tu dois traiter ce mot :
 
-1. Décompose le mot en ses parties constitutives : racine, préfixe, suffixe.
+1. Décompose le mot en ses parties constitutives : racine, préfixe, suffixe. GARDE les termes néerlandais pour les parties du mot.
 
-2. Explique la signification de chaque partie de façon simple et précise :
+2. Explique la signification de chaque partie de façon simple et précise en français :
    - racine = sens de base du mot
    - préfixe = modification ou orientation du sens
    - suffixe = transformation grammaticale ou création d'une propriété
@@ -1068,13 +1068,13 @@ ${text}`;
 4. Donne uniquement les informations nécessaires pour comprendre la formation et le sens originel du mot.
 
 IMPORTANT : 
+- Réponds l'explication EN FRANÇAIS
+- GARDE tous les termes néerlandais (parties du mot décomposé, racines, préfixes, suffixes) EN NÉERLANDAIS
 - Ne reformule pas simplement la définition
 - Ne mets pas de bla-bla
 - Ne parle pas de fréquence ou d'usage à moins que ce soit essentiel à la compréhension de la formation
-- Ne donne JAMAIS de traduction en français ou dans une autre langue
-- Reste uniquement dans le cadre du néerlandais
 
-Format de réponse souhaité :
+Format de réponse souhaité (explication en français, termes néerlandais conservés) :
 - Pour un adjectif : "volledig" → formé de "vol" (plein) + "-edig" (suffixe formant un adjectif), signifie "complet".
 - Pour un nom : "inhoud" → formé de "houden" (tenir) + "in-" (dans), signifie "ce qui se trouve à l'intérieur".
 - Pour un verbe : "inhouden" → "houden" (tenir) + "in-" (dans), signifie "contenir".`;

@@ -63,3 +63,5 @@ https://piaahwlfyvezdfnzoxeb.supabase.co/functions/v1/deepseek-proxy
 
 Le service Angular `DeepSeekService` utilise automatiquement cette fonction au lieu d'appeler directement l'API DeepSeek.
 
+
+
